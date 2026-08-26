@@ -50,8 +50,21 @@ export function SealForm({
     if (!name.trim() || !accept1 || !accept2) {
       setErrorState({
         state: "INCOMPLETE",
-        message: "ADD A PUBLIC NAME AND ACCEPT BOTH ACKNOWLEDGMENTS.",
+        message: !name.trim()
+          ? "ADD A PUBLIC NAME BEFORE SEALING."
+          : "ACCEPT BOTH ACKNOWLEDGMENTS BEFORE SEALING.",
       });
+      // Printing a message below a full-width button is not enough: to the
+      // person pressing it, the button did nothing. Move focus to the thing
+      // that is actually blocking them, which also announces it to a screen
+      // reader and scrolls it into view.
+      const blocking = !name.trim()
+        ? event.currentTarget.querySelector<HTMLElement>("#public-name")
+        : event.currentTarget.querySelectorAll<HTMLElement>('input[type="checkbox"]')[
+            accept1 ? 1 : 0
+          ];
+      blocking?.focus();
+      blocking?.scrollIntoView({ block: "center", behavior: "smooth" });
       return;
     }
     setBusy(true);

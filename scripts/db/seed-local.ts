@@ -47,6 +47,15 @@ export async function seedLocal(): Promise<void> {
       const entryId = inserted[0]?.id;
       if (!entryId) throw new Error("origin insert failed");
 
+      // The seed writes #000001 directly, so it must also advance the
+      // allocator past it. Leaving the counter behind means the next seal
+      // asks for an ordinal that already exists and fails on the unique
+      // index - which is exactly what happened when the allocator's starting
+      // value stopped assuming this seed had run.
+      await tx.unsafe(
+        "UPDATE ledger.ordinal_counter SET next_ordinal = GREATEST(next_ordinal, (SELECT max(ordinal) + 1 FROM ledger.entry)), updated_at = now() WHERE id = 1",
+      );
+
       await tx.unsafe("SELECT pg_advisory_xact_lock(hashtext('ledger.event.chain'))");
       const payload = {
         ordinal: 1,

@@ -1,0 +1,9 @@
+{
+  "receipt": "ours.steward-receipt/v1",
+  "kind": "build-deployed",
+  "at": "2026-08-26T18:26:23.470Z",
+  "commitRef": "f1d0420",
+  "environment": "production",
+  "actor": "founder-steward",
+  "reason": "production deployment before opening"
+}

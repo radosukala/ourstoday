@@ -116,6 +116,46 @@ test.describe("the escalated instrument", () => {
     await expect(page.locator(".ledger-table")).toContainText(name);
   });
 
+  test("refusing to seal moves focus to what is blocking, not just a message", async ({ page }) => {
+    // Reported from the real launch: pressing SEAL appeared to do nothing.
+    // The message rendered, but below a full-width button and outside where
+    // the eye was, so to the person the button was simply dead.
+    const email = uniqueEmail("blocked");
+    await page.goto("/enter");
+    await emailField(page).fill(email);
+    await page.getByRole("button", { name: /send/i }).click();
+    await expect(page).toHaveURL(/check-email/);
+    const captured = await newestCapturedConfirmUrl();
+    await page.goto(captured.url);
+    await page.getByRole("button", { name: /continue/i }).click();
+    await expect(page).toHaveURL(/enter\/continue/, { timeout: 20000 });
+
+    // A name but no acknowledgments: the refusal must name the real blocker
+    // and put the cursor on it.
+    await publicNameField(page).fill("Blocked Entrant");
+    await page.getByRole("button", { name: /seal/i }).click();
+    await expect(page.locator(".form-status")).toContainText(/ACCEPT BOTH ACKNOWLEDGMENTS/i);
+    await expect(page.locator(".check-row input").first()).toBeFocused();
+
+    // Checking one is not enough, and focus moves to the SECOND one.
+    await page.locator(".check-row input").first().check();
+    await page.getByRole("button", { name: /seal/i }).click();
+    await expect(page.locator(".check-row input").nth(1)).toBeFocused();
+
+    // An empty name is a different blocker and says so.
+    await page.locator(".check-row input").nth(1).check();
+    await publicNameField(page).fill("");
+    await page.getByRole("button", { name: /seal/i }).click();
+    await expect(page.locator(".form-status")).toContainText(/ADD A PUBLIC NAME/i);
+    await expect(publicNameField(page)).toBeFocused();
+
+    // The checkbox must be a real target, not a hairline: 24px is the
+    // accessible minimum and the original was 18px.
+    const box = await page.locator(".check-row input").first().boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(24);
+    expect(box?.height).toBeGreaterThanOrEqual(24);
+  });
+
   test("the entry form treats a witness as optional, not as a lesser path", async ({ page }) => {
     await page.goto("/enter");
     // Nothing on the first step demands a witness or implies one is expected.

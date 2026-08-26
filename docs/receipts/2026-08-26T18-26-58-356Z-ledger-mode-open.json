@@ -1,0 +1,11 @@
+{
+  "receipt": "ours.steward-receipt/v1",
+  "kind": "ledger-mode-open",
+  "at": "2026-08-26T18:26:58.356Z",
+  "target": "OPEN",
+  "actor": "founder-steward",
+  "reason": "opening the Founding Ledger",
+  "result": {
+    "mode": "OPEN"
+  }
+}
