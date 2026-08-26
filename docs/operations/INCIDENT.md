@@ -39,6 +39,21 @@ Logs will not tell you much on purpose: the redaction rules in
 [DATA-MAP.md](./DATA-MAP.md) mean errors carry an event name and no personal
 data. Reproduce locally rather than trying to read more out of production.
 
+## Resetting to zero
+
+`pnpm db:reset --confirm <host>` destroys every schema and rebuilds them
+empty. It exists for exactly one situation: **a ledger that has not been
+published to anyone yet.**
+
+Once a single stranger holds an ordinal, this is the wrong tool and no flag
+makes it right. The chronological record is the product; corrections append.
+A ledger that can be reset once someone is relying on it was never a ledger.
+
+It refuses while the ledger is OPEN, requires the target host typed out rather
+than a `--yes` that can be pasted from a previous command, prints what it is
+about to destroy, and writes a receipt to `docs/receipts/` **before** dropping
+anything — because the canonical log cannot record its own deletion.
+
 ## What you must not do
 
 - **Never edit a canonical event.** There is no command for it and the database
