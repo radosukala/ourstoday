@@ -1,5 +1,6 @@
 import { config, ConfigError } from "@/config";
 import { getSql } from "@/db/sqltype";
+import { checkEmailDeliverability } from "@/email/deliverability";
 import { foundingState } from "@/ledger/state";
 import { jsonError, jsonOk } from "@/lib/http";
 import { log } from "@/observability/logger";
@@ -219,10 +220,24 @@ export async function GET(req: Request) {
     );
   }
 
+  // Entry requires a magic link, so a ledger that can accept entries while
+  // email is broken is a trap: every visitor sees "check your email" and
+  // nothing arrives.
+  const email = await checkEmailDeliverability();
+  if (!email.deliverable) {
+    log.error("health.email_undeliverable", { mode: email.mode, domain: email.fromDomain });
+  }
+
   return jsonOk({
     service: "OURS TODAY",
     checks: "deep",
     ledger: state.ledgerState,
+    email,
+    /**
+     * The single question that matters before opening: can a stranger who
+     * arrives right now actually complete an entry?
+     */
+    entryUsable: state.canAcceptEntries && email.deliverable,
     canAcceptEntries: state.canAcceptEntries,
     commit: deployedCommit(),
     time: new Date().toISOString(),
