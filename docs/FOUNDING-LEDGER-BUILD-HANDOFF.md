@@ -1131,6 +1131,23 @@ Local implementation should proceed without inventing answers to these:
 11. Whether a risk-based bot challenge is required at launch.
 12. Licensed review of entry copy and the boundary between Founding Ledger
     status and future legal membership eligibility.
+13. **Succession and exit instruments.** Added 26 August 2026 by the Vision
+    Escalation 0.1 adoption receipt. Two legal instruments, neither of which
+    may be published as Markdown:
+    - **Article Zero** — the right to leave with everything, as an enforceable
+      clause rather than an intention. The *capability* is shipped and tested
+      (`pnpm fork export` / `pnpm fork verify`, quarterly Fork Drill); the
+      clause requires a lawyer.
+    - **Constitutional liveness** — if no steward receipt is published for 90
+      days the ledger auto-pauses, with public reading and data rights
+      continuing; if none for 365 days, a pre-executed instrument releases the
+      software under an irrevocable licence to the member body and triggers
+      transfer of the domain and the anchoring responsibility.
+
+    This is a succession plan. It is cheap to draft while the founder-steward
+    holds all the power, and impossible to draft credibly afterwards. Publish
+    it only when executed: a promise with no mechanism is the exact thing this
+    project exists to oppose.
 
 The agent implements safe extension points and marks these `FUTURE DECISION`.
 It does not block ordinary local work and does not fabricate policy.
@@ -1139,7 +1156,14 @@ It does not block ordinary local work and does not fabricate policy.
 
 ## 17. Canonical production launch gates
 
-The Founding Ledger remains closed until all are evidenced:
+The Founding Ledger remains closed until all are evidenced.
+
+> **These are now rows, not checkboxes.** `ledger.gate` holds all sixteen with
+> the evidence each requires and what blocks it, and `/status` renders them
+> live - including the day one slips, which appends `ledger.gate.changed`.
+> A gate cannot be marked MET without an evidence URI. The list below is the
+> canonical text; the database is the canonical state.
+
 
 - [ ] legal status and privacy notice reviewed;
 - [ ] public/private data map approved;

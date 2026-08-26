@@ -24,12 +24,20 @@ test.describe("the public instrument", () => {
     await page.goto("/source/operations/DATA-MAP.md");
     await expect(page.locator("body")).toContainText("NOT LEGALLY REVIEWED");
 
+    // The event schema is a public standard, and the receipts are public too.
+    await page.goto("/source/EVENT-SCHEMA-1.0.md");
+    await expect(page.locator("body")).toContainText("ours.event-schema/1.0");
+    await page.goto("/source/receipts/2026-08-26-vision-escalation-adoption.md");
+    await expect(page.locator("body")).toContainText("ours.decision-receipt/v1");
+
     // Traversal, in a few shapes, is refused rather than served.
     for (const probe of [
       "/source/%2e%2e%2f.env.local",
       "/source/../.env.local",
       "/source/operations/%2e%2e%2f%2e%2e%2f.env.local",
       "/source/operations/README.md",
+      "/source/receipts/",
+      "/source/../package.json",
       "/source/.env.local",
     ]) {
       const res = await page.request.get(probe);
@@ -37,14 +45,20 @@ test.describe("the public instrument", () => {
     }
   });
 
-  test("homepage passes axe with only minor contrast findings tolerated", async ({ page }) => {
-    await page.goto("/");
-    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-    const blocking = results.violations.filter((v) =>
-      ["critical", "serious"].includes(v.impact ?? ""),
-    );
-    expect(blocking).toEqual([]);
-  });
+  for (const path of ["/", "/enter", "/status", "/anchors"]) {
+    test("axe finds no serious or critical violation on " + path, async ({ page }) => {
+      await page.goto(path);
+      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+      const blocking = results.violations.filter((v) =>
+        ["critical", "serious"].includes(v.impact ?? ""),
+      );
+      // Report what failed rather than an empty-array diff nobody can read.
+      const summary = blocking.map(
+        (v) => v.id + " x" + v.nodes.length + ": " + (v.nodes[0]?.failureSummary ?? ""),
+      );
+      expect(summary, summary.join("\n")).toEqual([]);
+    });
+  }
 
   test("keyboard navigation reaches the entry action and dialogs are labelled", async ({
     page,

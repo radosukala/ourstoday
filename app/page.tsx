@@ -542,8 +542,8 @@ export default async function HomePage() {
             </a>
             <a href="/status">
               <span>08</span>
-              <strong>LIVE SERVICE + LEDGER STATUS</strong>
-              <em>TRUTHFUL STATE</em>
+              <strong>LIVE STATUS + THE SIXTEEN LAUNCH GATES</strong>
+              <em>WHAT IS NOT YET TRUE</em>
             </a>
             <a href="/source/FOUNDING-LEDGER-BUILD-HANDOFF.md">
               <span>09</span>
@@ -569,6 +569,21 @@ export default async function HomePage() {
               <span>13</span>
               <strong>VISION ESCALATION 0.1</strong>
               <em>PROPOSAL</em>
+            </a>
+            <a href="/source/EVENT-SCHEMA-1.0.md">
+              <span>14</span>
+              <strong>EVENT SCHEMA 1.0</strong>
+              <em>PUBLISHED STANDARD</em>
+            </a>
+            <a href="/source/receipts/2026-08-26-vision-escalation-adoption.md">
+              <span>15</span>
+              <strong>VISION ESCALATION · ADOPTION RECEIPT</strong>
+              <em>DECISION</em>
+            </a>
+            <a href="/anchors">
+              <span>16</span>
+              <strong>ANCHORS · PROVABLE WITHOUT US</strong>
+              <em>MERKLE ROOTS</em>
             </a>
           </nav>
         </section>

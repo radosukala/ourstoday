@@ -9,6 +9,7 @@ import {
   AlreadySealedError,
   IdempotencyConflictError,
   InvalidRelayError,
+  InvalidWitnessError,
   LedgerClosedError,
   SelfReferralBlockedError,
   StaleConsentError,
@@ -79,6 +80,9 @@ export async function POST(req: Request) {
       acceptedVersions: parsed.data.acceptedVersions,
       idempotencyKey: parsed.data.idempotencyKey,
       ...(predecessor ? { predecessor } : {}),
+      ...(parsed.data.witnessOrdinal !== undefined
+        ? { witnessOrdinal: parsed.data.witnessOrdinal }
+        : {}),
     });
 
     const relayUrl = result.relayToken
@@ -96,6 +100,10 @@ export async function POST(req: Request) {
           ? String(result.predecessorOrdinal).padStart(6, "0")
           : null,
       isFirstContinuation: result.isFirstContinuation,
+      witnessOrdinal:
+        result.witnessOrdinal !== undefined ? String(result.witnessOrdinal).padStart(6, "0") : null,
+      // The member's own stable identifier. Returned to them, never public.
+      memberRoot: result.memberRoot,
       receipt: result.receipt,
       relayUrl,
       legalStatusLine: "OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED",
@@ -127,6 +135,16 @@ export async function POST(req: Request) {
     }
     if (error instanceof SelfReferralBlockedError || error instanceof InvalidRelayError) {
       return jsonError("RELAY_NOT_USABLE", error.message, 400);
+    }
+    if (error instanceof InvalidWitnessError) {
+      // One neutral sentence for every reason. Distinguishing "no such entry"
+      // from "not sealed" from "that is you" would turn the field into an
+      // oracle for probing which ordinals belong to whom.
+      return jsonError(
+        "WITNESS_NOT_USABLE",
+        "That number cannot witness this entry. Leave it blank to enter without a witness - your place is identical either way.",
+        400,
+      );
     }
     const message = error instanceof Error ? error.message : "";
     if (message === "DISPLAY_NAME_LENGTH") {

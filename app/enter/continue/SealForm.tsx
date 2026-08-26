@@ -11,6 +11,8 @@ interface ReceiptPayload {
   displayName?: string;
   predecessorOrdinal?: string | null;
   isFirstContinuation?: boolean;
+  witnessOrdinal?: string | null;
+  memberRoot?: string;
   relayUrl?: string | null;
   receipt?: {
     headline: string;
@@ -34,6 +36,7 @@ export function SealForm({
   alreadySealed: boolean;
 }) {
   const [name, setName] = useState("");
+  const [witness, setWitness] = useState("");
   const [accept1, setAccept1] = useState(false);
   const [accept2, setAccept2] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -60,6 +63,9 @@ export function SealForm({
           displayName: name.trim(),
           acceptedVersions: versions,
           idempotencyKey: makeKey(),
+          // Absent, not null, when nobody is named: entering without a witness
+          // is a complete entry and the request should say nothing at all.
+          ...(witness.trim() ? { witnessOrdinal: Number(witness.trim()) } : {}),
         }),
       });
       const payload = (await res.json()) as ReceiptPayload;
@@ -135,6 +141,12 @@ export function SealForm({
             <dt>PUBLIC NAME</dt>
             <dd>{result.displayName}</dd>
           </div>
+          {result.witnessOrdinal ? (
+            <div>
+              <dt>WITNESSED BY</dt>
+              <dd>{"#" + result.witnessOrdinal + " — attestation only; they gained nothing."}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>LEGAL MEMBERSHIP</dt>
             <dd>NOT YET ISSUED — THIS IS NOT LEGAL MEMBERSHIP.</dd>
@@ -177,6 +189,31 @@ export function SealForm({
             </div>
           </>
         ) : null}
+        {result.memberRoot ? (
+          <>
+            <h3 style={{ marginTop: 24, fontSize: 22 }}>Your member root.</h3>
+            <p className="neutral-note" style={{ color: "var(--paper-quiet)" }}>
+              A STABLE IDENTIFIER DERIVED FROM YOUR ENTRY. IT IS NOT A PASSWORD AND IT AUTHORIZES
+              NOTHING. KEEP IT: A CREDENTIAL YOU CONTROL CAN BE ROOTED HERE LATER WITHOUT ANYONE
+              RENUMBERING OR RE-ENTERING.
+            </p>
+            <dl>
+              <div>
+                <dt>MEMBER ROOT</dt>
+                <dd style={{ wordBreak: "break-all", fontSize: 12 }}>{result.memberRoot}</dd>
+              </div>
+            </dl>
+            <div className="receipt-actions">
+              <button
+                className="small-button"
+                type="button"
+                onClick={() => copy(result.memberRoot ?? "", "root")}
+              >
+                {copied === "root" ? "COPIED" : "COPY MEMBER ROOT"}
+              </button>
+            </div>
+          </>
+        ) : null}
         <div className="receipt-actions" style={{ marginTop: 18 }}>
           <a className="small-button" href={"/e/" + String(parseInt(padded || "0", 10))}>
             VIEW PUBLIC RECEIPT
@@ -210,6 +247,26 @@ export function SealForm({
           />
           <p className="field-note" id="public-name-note">
             This becomes public on the ledger when you seal. Your email never does.
+          </p>
+
+          <label className="field-label" htmlFor="witness-ordinal">
+            WITNESS NUMBER <span style={{ opacity: 0.55 }}>— OPTIONAL</span>
+          </label>
+          <input
+            id="witness-ordinal"
+            name="witnessOrdinal"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={9}
+            value={witness}
+            onChange={(e) => setWitness(e.target.value.replace(/[^0-9]/g, ""))}
+            aria-describedby="witness-note"
+          />
+          <p className="field-note" id="witness-note">
+            If someone already in the ledger can attest you are a person, put their number here.
+            They receive nothing for it — no reward, no rank, no vote, no visibility. Leave it blank
+            and your place is exactly the same.
           </p>
 
           <label className="check-row">

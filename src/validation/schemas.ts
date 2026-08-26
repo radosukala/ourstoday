@@ -42,6 +42,12 @@ export const sealRequestSchema = z.object({
   displayName: displayNameSchema,
   acceptedVersions: documentVersionsSchema,
   idempotencyKey: idempotencyKeySchema,
+  /**
+   * Optional ordinal of an entry attesting this entrant is a person.
+   * Optional in the schema because it must stay optional in the institution:
+   * naming nobody is a complete entry, not a partial one.
+   */
+  witnessOrdinal: z.number().int().positive().max(100_000_000).optional(),
 });
 
 export const correctionRequestSchema = z.object({

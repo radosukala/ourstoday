@@ -19,6 +19,7 @@ const ALLOWLIST = new Set([
   "FOUNDING-LEDGER-BUILD-HANDOFF.md",
   "FOUNDING-LEDGER-NEXT-SESSION-PROMPT.md",
   "OURS-VISION-ESCALATION-0.1.md",
+  "EVENT-SCHEMA-1.0.md",
   // The operations package. Publishing the data map and the privacy draft
   // WITH their unanswered questions is the point: this is the record of what
   // is not yet true about the institution.
@@ -32,6 +33,10 @@ const ALLOWLIST = new Set([
   "operations/EMAIL-DELIVERABILITY.md",
   "operations/SECRET-ROTATION.md",
   "operations/SUPPORT-AND-REVIEW.md",
+  "operations/FORK-DRILL.md",
+  // Receipts are the record of what was decided and by whom.
+  "receipts/2026-08-26-build-receipt-0.1.md",
+  "receipts/2026-08-26-vision-escalation-adoption.md",
 ]);
 
 const DOCS_ROOT = () => path.join(process.cwd(), "docs");

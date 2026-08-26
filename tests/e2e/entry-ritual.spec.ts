@@ -60,6 +60,11 @@ test.describe("the entry ritual", () => {
     await expect(
       page.getByText(/NOT LEGAL MEMBERSHIP|Not legal membership/i).first(),
     ).toBeVisible();
+    // The member root is shown to the entrant and is never a public field.
+    const receipt = page.locator("article.receipt-block").first();
+    await expect(receipt).toContainText(/MEMBER ROOT/i);
+    await expect(page.getByRole("button", { name: /copy member root/i })).toBeVisible();
+
     // The relay is offered as copyable text with the token in the path, plus
     // an explicit copy control. It is never auto-posted anywhere.
     const relayUrl = await relayUrlFromReceipt(page);

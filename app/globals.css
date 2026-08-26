@@ -1243,6 +1243,12 @@ textarea::placeholder {
   min-height: 60vh;
   padding: clamp(38px, 6vw, 88px) var(--pad);
 }
+/* 60vh gives a single-section page presence. On a page that stacks sections
+   it becomes a hole: on a tall viewport the first shell alone reserves most
+   of the screen before any content follows it. */
+main:has(> section + section) > .page-shell {
+  min-height: 0;
+}
 .page-shell.ink {
   background: var(--ink);
   color: var(--paper);
@@ -1451,5 +1457,103 @@ textarea::placeholder {
   .formation-status i,
   .relay-open i {
     animation: none;
+  }
+}
+
+/* --- Launch gates on /status ------------------------------------------------
+   The primary content of this section is what is NOT yet true, so a met gate
+   is quiet and an open one is legible. Slipped is the loud state: a slip that
+   looks like an absence is how a slip goes unnoticed. */
+.gates {
+  padding: clamp(46px, 7vw, 96px) var(--pad);
+}
+.gate-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0;
+  margin: 34px 0 0;
+  border-top: 2px solid var(--paper);
+  border-bottom: 1px solid var(--paper-line);
+}
+.gate-summary > div {
+  padding: 18px 20px 20px 0;
+  border-right: 1px solid var(--paper-line);
+}
+.gate-summary > div:last-child {
+  border-right: 0;
+}
+.gate-summary dt {
+  font: 700 10px/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--paper-quiet);
+}
+.gate-summary dd {
+  margin: 8px 0 0;
+  font: 700 15px/1.25 var(--mono);
+}
+.gate-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gate-list li {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 16px;
+  align-items: baseline;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--paper-line);
+}
+.gate-list li:last-child {
+  border-bottom: 0;
+}
+.gate-list li > b {
+  font: 700 12px/1 var(--mono);
+  color: var(--paper-quiet);
+}
+.gate-list li div {
+  display: grid;
+  gap: 5px;
+}
+.gate-list li div strong {
+  font: 700 14px/1.25 var(--mono);
+}
+.gate-list li div span {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--paper-quiet);
+}
+.gate-list li div em {
+  font: 700 10px/1.4 var(--mono);
+  font-style: normal;
+  letter-spacing: 0.06em;
+  color: var(--signal);
+}
+.gate-state {
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--paper-quiet);
+}
+.gate-list li[data-state="MET"] .gate-state {
+  color: var(--paper);
+}
+.gate-list li[data-state="MET"] .gate-state a {
+  text-decoration: underline;
+}
+.gate-list li[data-state="SLIPPED"] .gate-state {
+  color: var(--signal);
+}
+.gate-list li[data-state="SLIPPED"] {
+  border-left: 3px solid var(--signal);
+  padding-left: 14px;
+}
+
+@media (max-width: 720px) {
+  .gate-list li {
+    grid-template-columns: 30px 1fr;
+  }
+  .gate-state {
+    grid-column: 2;
   }
 }
