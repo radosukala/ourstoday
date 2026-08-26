@@ -7,11 +7,13 @@ import {
   AlreadySealedError,
   IdempotencyConflictError,
   InvalidRelayError,
+  InvalidWitnessError,
   LedgerClosedError,
   SelfReferralBlockedError,
   StaleConsentError,
 } from "./errors";
 import { digestEvent, newEventId } from "./events";
+import { memberRootFor } from "./member-root";
 
 /**
  * The canonical entry seal. ONE PostgreSQL transaction performs every effect:
@@ -27,6 +29,16 @@ export interface SealInput {
   acceptedVersions: DocumentVersions;
   idempotencyKey: string;
   predecessor?: { entryId: string; relayRecordId: string };
+  /**
+   * OPTIONAL ordinal of an existing entry attesting this entrant is a person.
+   *
+   * A witness earns nothing: no reward, no count, no rank, no vote, no
+   * revenue, no visibility. What it produces is structure - the ledger stops
+   * being a list and becomes a graph of attestation, which is what makes
+   * Sybil resistance a property of shape rather than of KYC. An entrant who
+   * names no witness enters exactly the same and is in no way lesser.
+   */
+  witnessOrdinal?: number;
 }
 
 export interface SealResult {
@@ -45,6 +57,14 @@ export interface SealResult {
    * is lineage, winning the race is an additional, exclusive fact.
    */
   isFirstContinuation: boolean;
+  /** The ordinal of the entry that attested this entrant, when one was named. */
+  witnessOrdinal?: number;
+  /**
+   * Stable, opaque, member-held identifier derived from the entry id. Not a
+   * credential; the forward-compatibility hook for rooting a real key here
+   * later without renumbering or reissuing anything.
+   */
+  memberRoot: string;
   receipt: SealReceipt;
 }
 
@@ -174,6 +194,8 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
           displayName: string;
           predecessorOrdinal?: number;
           isFirstContinuation?: boolean;
+          witnessOrdinal?: number;
+          memberRoot?: string;
         };
         // Same key + same input returns the SAME result. The original relay
         // token is never replayed; a fresh one can be minted separately.
@@ -187,6 +209,8 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
             ? { predecessorOrdinal: snap.predecessorOrdinal }
             : {}),
           isFirstContinuation: snap.isFirstContinuation === true,
+          ...(snap.witnessOrdinal !== undefined ? { witnessOrdinal: snap.witnessOrdinal } : {}),
+          memberRoot: snap.memberRoot ?? memberRootFor(snap.entryId),
           relayToken: "",
           receipt: buildReceipt(snap.ordinal, snap.isFirstContinuation === true),
         };
@@ -229,6 +253,25 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
       predecessorOrdinal = ord[0]?.ordinal;
     }
 
+    // ---- Witness revalidation inside the transaction --------------------------
+    let witnessEntryId: string | null = null;
+    if (input.witnessOrdinal !== undefined) {
+      const witness = await tx.unsafe<
+        { id: string; person_id: string | null; lifecycle: string }[]
+      >("SELECT id, person_id, lifecycle FROM ledger.entry WHERE ordinal = $1", [
+        input.witnessOrdinal,
+      ]);
+      const w = witness[0];
+      if (!w) throw new InvalidWitnessError("witness-missing");
+      if (w.lifecycle !== "SEALED") throw new InvalidWitnessError("witness-not-sealed");
+      // A person cannot attest their own personhood. Nothing in the graph
+      // means anything if it can close on itself.
+      if (w.person_id !== null && w.person_id === person[0].id) {
+        throw new InvalidWitnessError("witness-is-self");
+      }
+      witnessEntryId = w.id;
+    }
+
     // ---- Row-locked ordinal allocation ----------------------------------------
     await tx.unsafe("SELECT pg_advisory_xact_lock(hashtext('ledger.ordinal_counter'))");
     const counter = await tx.unsafe<{ next_ordinal: number }[]>(
@@ -243,7 +286,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
 
     // ---- Insert the canonical entry --------------------------------------------
     const inserted = await tx.unsafe<EntryRow[]>(
-      "INSERT INTO ledger.entry (ordinal, person_id, display_name, declaration_version, protocol_version, legal_status_version, origin_kind, predecessor_entry_id) VALUES ($1, $2, $3, $4, $5, $6, 'DEFAULT_ENTRY', $7) RETURNING id, ordinal, display_name, seal_ts, predecessor_entry_id",
+      "INSERT INTO ledger.entry (ordinal, person_id, display_name, declaration_version, protocol_version, legal_status_version, origin_kind, predecessor_entry_id, witness_entry_id) VALUES ($1, $2, $3, $4, $5, $6, 'DEFAULT_ENTRY', $7, $8) RETURNING id, ordinal, display_name, seal_ts, predecessor_entry_id",
       [
         ordinal,
         person[0].id,
@@ -252,6 +295,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
         v.protocol_version,
         v.legal_status_version,
         input.predecessor?.entryId ?? null,
+        witnessEntryId,
       ],
     );
     const entry = inserted[0];
@@ -336,8 +380,32 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
         protocolVersion: v.protocol_version,
         legalStatusVersion: v.legal_status_version,
         ...(predecessorOrdinal !== undefined ? { predecessorOrdinal } : {}),
+        ...(input.witnessOrdinal !== undefined ? { witnessOrdinal: input.witnessOrdinal } : {}),
       },
     });
+
+    // ---- Witness attestation ------------------------------------------------------
+    // A separate event, because attestation is its own fact: a reader building
+    // their own model of the graph should not have to parse entry payloads to
+    // find the edges. The event records the edge and nothing about the witness
+    // beyond the ordinal they already publish.
+    if (input.witnessOrdinal !== undefined && witnessEntryId !== null) {
+      await appendEvent({
+        id: newEventId(),
+        type: "ledger.entry.witnessed",
+        actorType: "SERVICE",
+        subjectType: "ledger.entry",
+        subjectRef: entry.id,
+        authorityRef: "ours.vision-escalation/0.1",
+        privacyClass: "PUBLIC",
+        payload: {
+          ordinal: entry.ordinal,
+          witnessOrdinal: input.witnessOrdinal,
+          confers: "NOTHING",
+          note: "Attestation of personhood. No reward, count, rank, vote, revenue or visibility.",
+        },
+      });
+    }
 
     // ---- Arrival + atomic First Continuation race -------------------------------
     let isFirstContinuation = false;
@@ -396,6 +464,8 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
       displayName: entry.display_name,
       ...(predecessorOrdinal !== undefined ? { predecessorOrdinal } : {}),
       isFirstContinuation,
+      ...(input.witnessOrdinal !== undefined ? { witnessOrdinal: input.witnessOrdinal } : {}),
+      memberRoot: memberRootFor(entry.id),
     };
     await tx.unsafe(
       "UPDATE private.idempotency_record SET status = 'COMMITTED', result_snapshot = $1::text::jsonb WHERE operation = 'entry.seal' AND person_id = $2 AND key = $3",
@@ -410,6 +480,8 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
       displayName: entry.display_name,
       ...(predecessorOrdinal !== undefined ? { predecessorOrdinal } : {}),
       isFirstContinuation,
+      ...(input.witnessOrdinal !== undefined ? { witnessOrdinal: input.witnessOrdinal } : {}),
+      memberRoot: memberRootFor(entry.id),
       relayToken: signed.token,
       receipt: buildReceipt(entry.ordinal, isFirstContinuation),
     };

@@ -83,7 +83,7 @@ async function verifyRestore(sql: postgres.Sql): Promise<Omit<VerifyResult, "app
 
   const rows = await sql.unsafe<
     {
-      seq: string;
+      seq: string | number;
       type: string;
       occurred_at: Date | string;
       payload: Record<string, unknown>;
@@ -91,7 +91,7 @@ async function verifyRestore(sql: postgres.Sql): Promise<Omit<VerifyResult, "app
       digest: string;
     }[]
   >(
-    "SELECT seq::text AS seq, type, occurred_at, payload, prev_digest, digest FROM ledger.event ORDER BY seq ASC",
+    "SELECT seq, type, occurred_at, payload, prev_digest, digest FROM ledger.event ORDER BY seq ASC",
   );
 
   let prev: string | null = null;

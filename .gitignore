@@ -21,3 +21,6 @@ playwright/.cache/
 
 # OS noise
 .DS_Store
+
+# ours-fork output; regenerate with `pnpm fork export`
+/fork-export/

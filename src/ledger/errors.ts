@@ -45,3 +45,17 @@ export class UnverifiedPersonError extends Error {
     super("Email verification has not completed for this session.");
   }
 }
+
+/**
+ * A named witness could not attest this entry.
+ *
+ * The reason is a stable code rather than prose: a witness failure must never
+ * reveal whether a given ordinal exists, is sealed, or belongs to the person
+ * asking. The UI turns the code into one neutral sentence.
+ */
+export class InvalidWitnessError extends Error {
+  constructor(public readonly reason: string) {
+    super("INVALID_WITNESS");
+    this.name = "InvalidWitnessError";
+  }
+}

@@ -33,7 +33,10 @@
     "db:restore:verify": "tsx scripts/db/restore-verify.ts",
     "db:seed:local": "tsx scripts/db/seed-local.ts",
     "steward": "tsx scripts/steward.ts",
-    "security:audit": "pnpm audit --prod && tsx scripts/security/secret-scan.ts"
+    "security:audit": "pnpm audit --prod && tsx scripts/security/secret-scan.ts",
+    "anchor": "tsx scripts/anchor.ts",
+    "conformance": "tsx scripts/conformance.ts",
+    "fork": "tsx scripts/fork.ts"
   },
   "dependencies": {
     "better-auth": "1.7.1",

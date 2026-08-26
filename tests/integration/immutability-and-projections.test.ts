@@ -52,6 +52,7 @@ describe("safe public projections", () => {
       "protocol_version",
       "public_status",
       "relay_state",
+      "witness_ordinal",
     ]);
 
     // Word-safe private fragments (bare "ip" would false-positive on
@@ -67,6 +68,31 @@ describe("safe public projections", () => {
       "jti",
     ]) {
       expect(names.some((n) => n.includes(forbidden))).toBe(false);
+    }
+
+    // Every public view, not just this one: a new projection is precisely
+    // where a private column arrives without anyone deciding to publish it.
+    const allPublic = await rawQuery<{ table_name: string; column_name: string }>(
+      "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public'",
+    );
+    for (const row of allPublic) {
+      for (const forbidden of [
+        "email",
+        "auth_user_id",
+        "person_id",
+        "token",
+        "session",
+        "addr",
+        "_ip_",
+        "jti",
+        "digest_of",
+        "risk",
+      ]) {
+        expect(
+          row.column_name.includes(forbidden),
+          row.table_name + "." + row.column_name + " looks private",
+        ).toBe(false);
+      }
     }
 
     const statusColumns = await rawQuery<{ column_name: string }>(
