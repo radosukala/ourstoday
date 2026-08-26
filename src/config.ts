@@ -3,10 +3,29 @@
  * Missing configuration fails loudly and descriptively; nothing defaults open.
  */
 
+/**
+ * A configuration problem, not a dependency problem.
+ *
+ * config() is called by getSql(), so without a distinct type a malformed
+ * RELAY_SIGNING_SECRET surfaces as "the database is not reachable" and sends
+ * whoever is debugging to the wrong provider entirely. The variable NAME is
+ * carried on the error and is safe to publish - every name is already in
+ * .env.example. The VALUE never is.
+ */
+export class ConfigError extends Error {
+  constructor(
+    public readonly variable: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ConfigError";
+  }
+}
+
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value || value.trim() === "") {
-    throw new Error(`Missing required environment variable ${name}. See .env.example.`);
+    throw new ConfigError(name, `Missing required environment variable ${name}. See .env.example.`);
   }
   return value.trim();
 }
@@ -27,7 +46,7 @@ function parseAppEnv(raw: string | undefined): AppEnv {
     case "production":
       return "production";
     default:
-      throw new Error(`Invalid APP_ENV ${String(raw)}`);
+      throw new ConfigError("APP_ENV", `Invalid APP_ENV ${String(raw)}`);
   }
 }
 
@@ -39,15 +58,26 @@ export function parseSigningSecrets(raw: string): Map<number, string> {
     if (!trimmed) continue;
     const idx = trimmed.indexOf(":");
     if (idx <= 0)
-      throw new Error('RELAY_SIGNING_SECRET entries must look like "<version>:<secret>"');
+      throw new ConfigError(
+        "RELAY_SIGNING_SECRET",
+        'RELAY_SIGNING_SECRET entries must look like "<version>:<secret>"',
+      );
     const version = Number.parseInt(trimmed.slice(0, idx), 10);
     const secret = trimmed.slice(idx + 1);
     if (!Number.isInteger(version) || version < 1)
-      throw new Error("Invalid relay signing key version");
-    if (secret.length < 32) throw new Error("Relay signing secrets must be at least 32 characters");
+      throw new ConfigError("RELAY_SIGNING_SECRET", "Invalid relay signing key version");
+    if (secret.length < 32)
+      throw new ConfigError(
+        "RELAY_SIGNING_SECRET",
+        "Relay signing secrets must be at least 32 characters",
+      );
     map.set(version, secret);
   }
-  if (map.size === 0) throw new Error("RELAY_SIGNING_SECRET contained no usable entries");
+  if (map.size === 0)
+    throw new ConfigError(
+      "RELAY_SIGNING_SECRET",
+      "RELAY_SIGNING_SECRET contained no usable entries",
+    );
   return map;
 }
 
@@ -75,7 +105,10 @@ export function config(): AppConfig {
   const appEnv = parseAppEnv(process.env.APP_ENV);
   const emailModeRaw: string = (process.env.EMAIL_DELIVERY_MODE ?? "capture").toLowerCase();
   if (emailModeRaw !== "capture" && emailModeRaw !== "resend") {
-    throw new Error("EMAIL_DELIVERY_MODE must be 'capture' or 'resend'");
+    throw new ConfigError(
+      "EMAIL_DELIVERY_MODE",
+      "EMAIL_DELIVERY_MODE must be 'capture' or 'resend'",
+    );
   }
   const emailDeliveryMode: "capture" | "resend" = emailModeRaw;
   const cfg = {
@@ -109,7 +142,7 @@ export function config(): AppConfig {
       .filter(Boolean),
   };
   if (cfg.emailDeliveryMode === "resend" && !cfg.resendApiKey) {
-    throw new Error("EMAIL_DELIVERY_MODE=resend requires RESEND_API_KEY");
+    throw new ConfigError("RESEND_API_KEY", "EMAIL_DELIVERY_MODE=resend requires RESEND_API_KEY");
   }
   // Fail closed: production must never inherit an accidental open gate.
   if (cfg.appEnv === "production" && process.env.ALLOW_CANONICAL_WRITES === undefined) {

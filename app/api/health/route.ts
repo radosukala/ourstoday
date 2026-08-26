@@ -1,3 +1,4 @@
+import { config, ConfigError } from "@/config";
 import { getSql } from "@/db/sqltype";
 import { foundingState } from "@/ledger/state";
 import { jsonError, jsonOk } from "@/lib/http";
@@ -19,26 +20,87 @@ export const dynamic = "force-dynamic";
  * returned tells an operator where to look and tells an outsider nothing they
  * could use.
  */
-function classify(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  const code = (error as { code?: string }).code ?? "";
+interface Diagnosis {
+  reason: string;
+  /** Symbolic error code. Safe to publish: it names a class, not an address. */
+  code: string;
+}
 
-  if (/Missing required environment variable/i.test(message)) return "CONFIG_MISSING";
-  if (/Refusing to connect/i.test(message)) return "CONFIG_REFUSED_INSECURE";
-  if (code === "ENOTFOUND" || /getaddrinfo/i.test(message)) return "DNS_FAILURE";
-  if (code === "ECONNREFUSED") return "CONNECTION_REFUSED";
-  if (code === "CONNECT_TIMEOUT" || code === "ETIMEDOUT" || /timeout/i.test(message)) {
-    return "TIMEOUT";
+/**
+ * SQLSTATE codes the server itself returns. These are unambiguous, so they are
+ * checked before any message matching.
+ */
+const SQLSTATE: Record<string, string> = {
+  "28P01": "AUTH_REJECTED",
+  "28000": "AUTH_REJECTED",
+  "3D000": "DATABASE_MISSING",
+  "3F000": "SCHEMA_NOT_MIGRATED",
+  "42P01": "SCHEMA_NOT_MIGRATED",
+  "53300": "CONNECTION_LIMIT_REACHED",
+  "57P01": "SERVER_SHUTTING_DOWN",
+  "57P03": "SERVER_STARTING",
+  "08001": "CONNECTION_FAILED",
+  "08004": "CONNECTION_REJECTED",
+  "08006": "CONNECTION_FAILED",
+  XX000: "SERVER_INTERNAL_ERROR",
+};
+
+/** Transport-level codes from the driver or from Node's networking stack. */
+const TRANSPORT: Record<string, string> = {
+  ENOTFOUND: "DNS_FAILURE",
+  EAI_AGAIN: "DNS_FAILURE",
+  ECONNREFUSED: "CONNECTION_REFUSED",
+  ECONNRESET: "CONNECTION_RESET",
+  EPIPE: "CONNECTION_RESET",
+  EHOSTUNREACH: "NETWORK_UNREACHABLE",
+  ENETUNREACH: "NETWORK_UNREACHABLE",
+  ETIMEDOUT: "TIMEOUT",
+  CONNECT_TIMEOUT: "TIMEOUT",
+  CONNECTION_CLOSED: "CONNECTION_CLOSED",
+  CONNECTION_ENDED: "CONNECTION_CLOSED",
+  CONNECTION_DESTROYED: "CONNECTION_CLOSED",
+  ERR_INVALID_ARG_TYPE: "DRIVER_SERIALIZATION",
+  ERR_MODULE_NOT_FOUND: "BUNDLE_INCOMPLETE",
+  MODULE_NOT_FOUND: "BUNDLE_INCOMPLETE",
+};
+
+/**
+ * Classify a dependency failure into something an operator can act on.
+ *
+ * "The database is not reachable" covers a missing environment variable, a
+ * hostname typo, a cold start, a firewall, rejected credentials and an
+ * unmigrated database. Those need different fixes, and a health endpoint that
+ * cannot tell them apart sends whoever is on call to read logs they
+ * deliberately cannot see.
+ *
+ * The CODE is published; the MESSAGE never is. postgres.js builds connection
+ * errors as `write <CODE> <host>:<port>`, so the message carries the database
+ * endpoint while the code names only a failure class.
+ */
+function classify(error: unknown): Diagnosis {
+  const err = error as { code?: unknown; name?: unknown; message?: unknown };
+  const code = typeof err.code === "string" ? err.code : "";
+  const name = typeof err.name === "string" ? err.name : "Error";
+  const message = typeof err.message === "string" ? err.message : String(error);
+
+  if (code && SQLSTATE[code]) return { reason: SQLSTATE[code] as string, code };
+  if (code && TRANSPORT[code]) return { reason: TRANSPORT[code] as string, code };
+
+  // Configuration failures throw before any socket is opened.
+  if (/Missing required environment variable/i.test(message)) {
+    return { reason: "CONFIG_MISSING", code: code || "CONFIG" };
   }
-  if (/password authentication|SASL|SCRAM|role .* does not exist/i.test(message)) {
-    return "AUTH_REJECTED";
+  if (/Refusing to connect/i.test(message)) {
+    return { reason: "CONFIG_REFUSED_INSECURE", code: code || "CONFIG" };
   }
-  if (/certificate|self signed|SSL|TLS|pg_hba/i.test(message)) return "TLS_FAILURE";
-  if (/database .* does not exist/i.test(message)) return "DATABASE_MISSING";
-  if (/relation .* does not exist|schema .* does not exist/i.test(message)) {
-    return "SCHEMA_NOT_MIGRATED";
+  if (/certificate|self.signed|SSL|TLS|pg_hba/i.test(message)) {
+    return { reason: "TLS_FAILURE", code: code || name };
   }
-  return "UNKNOWN";
+  if (/timeout/i.test(message)) return { reason: "TIMEOUT", code: code || name };
+
+  // Nothing matched. Publish the symbolic code and name so the next look is
+  // not another guess.
+  return { reason: "UNKNOWN", code: code || name };
 }
 
 /**
@@ -65,14 +127,36 @@ function deployedCommit(): string {
  */
 export async function GET() {
   try {
+    config();
+  } catch (error) {
+    if (error instanceof ConfigError) {
+      // The variable NAME is already public in .env.example. The value is not,
+      // and is never included.
+      log.error("health.config_invalid", { variable: error.variable });
+      return jsonError(
+        "CONFIGURATION_INVALID",
+        "Configuration is invalid: " + error.variable + ". commit=" + deployedCommit(),
+        503,
+      );
+    }
+    const diag = classify(error);
+    log.error("health.config_error", { ...diag });
+    return jsonError(
+      "CONFIGURATION_INVALID",
+      "Configuration could not be read (" + diag.reason + "/" + diag.code + ").",
+      503,
+    );
+  }
+
+  try {
     await getSql()`SELECT 1`;
   } catch (error) {
-    const reason = classify(error);
+    const { reason, code } = classify(error);
     // The full error goes to the server log, where the redaction rules apply.
-    log.error("health.database_unavailable", { reason });
+    log.error("health.database_unavailable", { reason, code });
     return jsonError(
       "DATABASE_UNAVAILABLE",
-      "The database is not reachable (" + reason + "). commit=" + deployedCommit(),
+      "The database is not reachable (" + reason + "/" + code + "). commit=" + deployedCommit(),
       503,
     );
   }
@@ -82,10 +166,15 @@ export async function GET() {
   try {
     await getSql()`SELECT 1 FROM ledger.system_state WHERE id = 1`;
   } catch (error) {
-    log.error("health.schema_unavailable", { reason: classify(error) });
+    const diag = classify(error);
+    log.error("health.schema_unavailable", { ...diag });
     return jsonError(
       "SCHEMA_NOT_MIGRATED",
-      "The database is reachable but has no ledger schema. Run db:migrate against it. commit=" +
+      "The database is reachable but has no ledger schema (" +
+        diag.reason +
+        "/" +
+        diag.code +
+        "). Run db:migrate against it. commit=" +
         deployedCommit(),
       503,
     );
@@ -95,8 +184,13 @@ export async function GET() {
   try {
     state = await foundingState();
   } catch (error) {
-    log.error("health.state_unavailable", { reason: classify(error) });
-    return jsonError("STATE_UNAVAILABLE", "Ledger state could not be read.", 503);
+    const diag = classify(error);
+    log.error("health.state_unavailable", { ...diag });
+    return jsonError(
+      "STATE_UNAVAILABLE",
+      "Ledger state could not be read (" + diag.reason + "/" + diag.code + ").",
+      503,
+    );
   }
 
   return jsonOk({
