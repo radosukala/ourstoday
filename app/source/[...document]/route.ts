@@ -21,6 +21,7 @@ const ALLOWLIST = new Set([
   "OURS-VISION-ESCALATION-0.1.md",
   "EVENT-SCHEMA-1.0.md",
   "INTERNAL-BOUNDARY.md",
+  "INSTRUMENT-DISCLOSURE-0.1.md",
   // The operations package. Publishing the data map and the privacy draft
   // WITH their unanswered questions is the point: this is the record of what
   // is not yet true about the institution.
