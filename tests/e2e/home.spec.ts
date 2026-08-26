@@ -20,8 +20,21 @@ test.describe("the public instrument", () => {
   test("source documents are reachable and traversal is not", async ({ page }) => {
     await page.goto("/source/CONSTITUTION-0.1.md");
     await expect(page.locator("body")).toContainText("# ");
-    const res = await page.request.get("/source/%2e%2e%2f.env.local");
-    expect(res.status()).toBe(404);
+    // The operations package is published with its unanswered questions.
+    await page.goto("/source/operations/DATA-MAP.md");
+    await expect(page.locator("body")).toContainText("NOT LEGALLY REVIEWED");
+
+    // Traversal, in a few shapes, is refused rather than served.
+    for (const probe of [
+      "/source/%2e%2e%2f.env.local",
+      "/source/../.env.local",
+      "/source/operations/%2e%2e%2f%2e%2e%2f.env.local",
+      "/source/operations/README.md",
+      "/source/.env.local",
+    ]) {
+      const res = await page.request.get(probe);
+      expect(res.status(), probe).toBe(404);
+    }
   });
 
   test("homepage passes axe with only minor contrast findings tolerated", async ({ page }) => {

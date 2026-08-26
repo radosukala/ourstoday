@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Governing documents must exist in server bundles (output tracing).
   outputFileTracingIncludes: {
-    "/source/[document]": ["./docs/**/*.md"],
+    "/source/[...document]": ["./docs/**/*.md"],
   },
   async headers() {
     return [

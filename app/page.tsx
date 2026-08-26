@@ -555,6 +555,21 @@ export default async function HomePage() {
               <strong>NEXT CODING SESSION PROMPT</strong>
               <em>BUILD · NOT DEPLOY</em>
             </a>
+            <a href="/source/operations/DATA-MAP.md">
+              <span>11</span>
+              <strong>DATA MAP · EVERY FIELD STORED</strong>
+              <em>DRAFT · NOT LEGALLY REVIEWED</em>
+            </a>
+            <a href="/source/operations/PRIVACY-NOTICE-DRAFT.md">
+              <span>12</span>
+              <strong>PRIVACY NOTICE</strong>
+              <em>DRAFT · GAPS LISTED</em>
+            </a>
+            <a href="/source/OURS-VISION-ESCALATION-0.1.md">
+              <span>13</span>
+              <strong>VISION ESCALATION 0.1</strong>
+              <em>PROPOSAL</em>
+            </a>
           </nav>
         </section>
       </main>
