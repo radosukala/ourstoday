@@ -1,0 +1,23 @@
+# dependencies / builds
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# secrets and local environment - never commit values
+.env
+.env.*
+!.env.example
+
+# local test email capture inbox (contains reusable magic URLs)
+.email-capture/
+
+# playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# OS noise
+.DS_Store

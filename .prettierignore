@@ -1,0 +1,6 @@
+.next/
+node_modules/
+archive/
+public/
+docs/
+*.md

@@ -1,0 +1,49 @@
+
+/** Typed seal failures mapped to honest machine states at the route layer. */
+
+export class LedgerClosedError extends Error {
+  readonly mode: string;
+  constructor(mode: string) {
+    super(mode === "PAUSED" ? "Canonical writes are paused." : "The Founding Ledger is not open.");
+    this.mode = mode;
+  }
+}
+
+export class AlreadySealedError extends Error {
+  readonly existingOrdinal: number | null;
+  constructor(existingOrdinal: number | null) {
+    super("This account already has an active Founding Ledger entry.");
+    this.existingOrdinal = existingOrdinal;
+  }
+}
+
+export class IdempotencyConflictError extends Error {
+  constructor() {
+    super("This idempotency key was already used with different input.");
+  }
+}
+
+export class StaleConsentError extends Error {
+  constructor() {
+    super("The accepted document versions are out of date. Review the current documents.");
+  }
+}
+
+export class SelfReferralBlockedError extends Error {
+  constructor() {
+    super("A person cannot continue their own line.");
+  }
+}
+
+export class InvalidRelayError extends Error {
+  constructor(reason: string) {
+    super(`Relay is not usable: ${reason}`);
+  }
+}
+
+export class UnverifiedPersonError extends Error {
+  constructor() {
+    super("Email verification has not completed for this session.");
+  }
+}
+
