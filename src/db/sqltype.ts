@@ -20,10 +20,10 @@ export type QueryRow<T> = T & Row;
  */
 export type OurSql = TransactionSql<Row>;
 
-/** Run one parameterized statement on the pooled connection. */
+/** Run one parameterized statement on the pooled connection. Params are an array matching $1..$n. */
 export async function rawQuery<T extends Row = Row>(
   query: string,
-  ...params: unknown[]
+  params: unknown[] = [],
 ): Promise<T[]> {
   const rows: unknown = await getSql().unsafe(query, params as never);
   return rows as T[];

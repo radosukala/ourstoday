@@ -283,7 +283,8 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
           args.authorityRef ?? null,
           args.privacyClass,
           args.idempotencyKey ?? null,
-          JSON.stringify(args.payload),
+          // Object param: postgres.js serializes jsonb itself.
+          args.payload,
           prevDigest,
           digest,
         ],
@@ -370,8 +371,10 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
       ...(firstContinuationOfOrdinal !== undefined ? { firstContinuationOfOrdinal } : {}),
     };
     await tx.unsafe(
-      "UPDATE private.idempotency_record SET status = 'COMMITTED', result_snapshot = $1::jsonb WHERE operation = 'entry.seal' AND person_id = $2 AND key = $3",
-      [JSON.stringify(snapshot), person[0].id, input.idempotencyKey],
+      // postgres.js serializes object params to jsonb itself; passing the
+      // pre-stringified value would double-encode into a jsonb string scalar.
+      "UPDATE private.idempotency_record SET status = 'COMMITTED', result_snapshot = $1 WHERE operation = 'entry.seal' AND person_id = $2 AND key = $3",
+      [snapshot, person[0].id, input.idempotencyKey],
     );
 
     return {

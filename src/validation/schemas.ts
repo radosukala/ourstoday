@@ -1,7 +1,11 @@
 
 import { z } from "zod";
 
-export const emailSchema = z.email().max(320).transform((v) => v.trim().toLowerCase());
+/** Trim and case-normalize BEFORE validating the address format. */
+export const emailSchema = z
+  .string()
+  .transform((v) => v.trim().toLowerCase())
+  .pipe(z.email().max(320));
 
 export const displayNameSchema = z
   .string()

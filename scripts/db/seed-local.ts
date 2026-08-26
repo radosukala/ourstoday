@@ -62,7 +62,8 @@ async function main() {
           entryId,
           "DAY-1-DECLARATION · LOCAL CONCEPT SEED",
           "PUBLIC",
-          JSON.stringify(payload),
+          // Object param: postgres.js serializes jsonb itself.
+          payload,
           null,
           digest,
         ],
