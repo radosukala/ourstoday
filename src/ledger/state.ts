@@ -1,8 +1,7 @@
-
-import { createHash } from "node:crypto";
 import { config } from "@/config";
-import { getSql, type OurSql } from "@/db/sqltype";
+import { getSql, jsonParam, toDate, tsParam, type DbTimestamp, type OurSql } from "@/db/sqltype";
 import { currentDocumentVersions } from "@/legal/documents";
+import { digestEvent } from "./events";
 
 export type LedgerMode = "CLOSED" | "OPEN" | "PAUSED";
 
@@ -17,14 +16,16 @@ export interface SystemStateView {
 }
 
 export async function readSystemState(): Promise<SystemStateView> {
-  const rows = await getSql().unsafe<{
-    mode: LedgerMode;
-    declaration_version: string;
-    protocol_version: string;
-    legal_status_version: string;
-    privacy_version: string;
-    changed_at: Date;
-  }[]>(
+  const rows = await getSql().unsafe<
+    {
+      mode: LedgerMode;
+      declaration_version: string;
+      protocol_version: string;
+      legal_status_version: string;
+      privacy_version: string;
+      changed_at: DbTimestamp;
+    }[]
+  >(
     "SELECT mode, declaration_version, protocol_version, legal_status_version, privacy_version, changed_at FROM ledger.system_state WHERE id = 1",
   );
   const row = rows[0];
@@ -41,7 +42,7 @@ export async function readSystemState(): Promise<SystemStateView> {
     protocolVersion: row?.protocol_version ?? "",
     legalStatusVersion: row?.legal_status_version ?? "",
     privacyVersion: row?.privacy_version ?? "",
-    changedAt: row?.changed_at ?? new Date(0),
+    changedAt: row?.changed_at ? toDate(row.changed_at) : new Date(0),
   };
 }
 
@@ -93,9 +94,12 @@ export async function transitionLedgerMode(args: {
     throw new StewardTransitionError("Actor label and reason are required.");
   }
   return getSql().begin(async (tx: OurSql) => {
-    const cur = await tx.unsafe<{ mode: LedgerMode }[]>("SELECT mode FROM ledger.system_state WHERE id = 1 FOR UPDATE");
+    const cur = await tx.unsafe<{ mode: LedgerMode }[]>(
+      "SELECT mode FROM ledger.system_state WHERE id = 1 FOR UPDATE",
+    );
     const previous = cur[0]?.mode ?? "CLOSED";
-    if (previous === args.target) throw new StewardTransitionError("Already in ".concat(args.target));
+    if (previous === args.target)
+      throw new StewardTransitionError("Already in ".concat(args.target));
     await tx.unsafe(
       "UPDATE ledger.system_state SET mode = $1, changed_by_actor = $2, changed_reason = $3, changed_at = now() WHERE id = 1",
       [args.target, args.actorLabel, args.reason],
@@ -106,27 +110,26 @@ export async function transitionLedgerMode(args: {
     );
     const occurredAt = new Date();
     const payload = { from: previous, to: args.target, reason: args.reason };
-    const material = JSON.stringify({
+    const digest = digestEvent({
       type: "ledger.system_state.changed",
       payload,
-      occurredAt: occurredAt.toISOString(),
+      occurredAt,
       prevDigest: last[0]?.digest ?? null,
     });
-    const digest = createHash("sha256").update(material).digest("hex");
     await tx.unsafe(
-      "INSERT INTO ledger.event (id, type, schema_version, occurred_at, actor_type, actor_ref, subject_type, subject_ref, authority_ref, privacy_class, payload, prev_digest, digest) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+      "INSERT INTO ledger.event (id, type, schema_version, occurred_at, actor_type, actor_ref, subject_type, subject_ref, authority_ref, privacy_class, payload, prev_digest, digest) VALUES ($1, $2, $3, $4::timestamptz, $5, $6, $7, $8, $9, $10, $11::text::jsonb, $12, $13)",
       [
         crypto.randomUUID(),
         "ledger.system_state.changed",
         "ours.founding-relay/0.1",
-        occurredAt,
+        tsParam(occurredAt),
         args.actorLabel.toUpperCase().includes("FOUNDER") ? "FOUNDER_STEWARD" : "STEWARD",
         args.actorLabel,
         "ledger.system_state",
         "1",
         "STEWARD-RECEIPT",
         "PUBLIC",
-        JSON.stringify(payload),
+        jsonParam(payload),
         last[0]?.digest ?? null,
         digest,
       ],
@@ -134,4 +137,3 @@ export async function transitionLedgerMode(args: {
     return { mode: args.target };
   });
 }
-

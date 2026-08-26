@@ -1,4 +1,3 @@
-
 import { config } from "@/config";
 import { captureEmail } from "./capture";
 import { sendViaResend } from "./resend";
@@ -69,4 +68,3 @@ export async function deliverMagicLinkEmail(to: string, confirmationUrl: string)
   }
   await sendViaResend(email, cfg.resendApiKey as string, cfg.resendFrom);
 }
-

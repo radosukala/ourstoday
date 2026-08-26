@@ -1,14 +1,10 @@
-
 import { config } from "@/config";
 import { getAuth } from "@/auth/auth";
 import { endpointContext } from "@/auth/session";
 import { checkMutationOrigin } from "@/security/origin";
 import { consumeRateLimit } from "@/security/ratelimit";
 import { sha256Email } from "@/security/digest";
-import {
-  createEntryContext,
-  relayRecordFromDevice,
-} from "@/lib/person";
+import { createEntryContext, relayRecordFromDevice } from "@/lib/person";
 import { jsonNeutral, jsonError, randomId } from "@/lib/http";
 import { magicLinkRequestSchema } from "@/validation/schemas";
 import { log } from "@/observability/logger";
@@ -23,7 +19,8 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const origin = checkMutationOrigin(req);
-  if (!origin.ok) return jsonError("ORIGIN_REJECTED", "This request failed its origin checks.", 403);
+  if (!origin.ok)
+    return jsonError("ORIGIN_REJECTED", "This request failed its origin checks.", 403);
 
   let body: unknown;
   try {
@@ -37,8 +34,13 @@ export async function POST(req: Request) {
 
   // Rate limit per IP-hash + email-digest bucket (database-backed).
   const ipHash = sha256Email(req.headers.get("x-forwarded-for") ?? "local");
-  const limited = await consumeRateLimit("magic-link:" + ipHash.slice(0, 16) + ":" + sha256Email(email).slice(0, 16), 15 * 60 * 1000, 8);
-  if (!limited.allowed) return jsonError("RATE_LIMITED", "Too many sign-in requests. Try again later.", 429);
+  const limited = await consumeRateLimit(
+    "magic-link:" + ipHash.slice(0, 16) + ":" + sha256Email(email).slice(0, 16),
+    15 * 60 * 1000,
+    8,
+  );
+  if (!limited.allowed)
+    return jsonError("RATE_LIMITED", "Too many sign-in requests. Try again later.", 429);
 
   // Bind relay provenance BEFORE dispatching the email.
   let ctxId: string | undefined;
@@ -84,4 +86,3 @@ export async function POST(req: Request) {
   void randomId;
   return jsonNeutral();
 }
-

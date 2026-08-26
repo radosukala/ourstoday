@@ -1,14 +1,9 @@
-
 import { getAuth } from "@/auth/auth";
 import { endpointContext } from "@/auth/session";
 import { config } from "@/config";
 import { checkMutationOrigin } from "@/security/origin";
 import { consumeRateLimit } from "@/security/ratelimit";
-import {
-  ensurePerson,
-  getPersonByAuthUserId,
-  resolvePredecessorForSeal,
-} from "@/lib/person";
+import { ensurePerson, getPersonByAuthUserId, resolvePredecessorForSeal } from "@/lib/person";
 import { sealEntry } from "@/ledger/seal";
 import {
   AlreadySealedError,
@@ -30,7 +25,8 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const origin = checkMutationOrigin(req);
-  if (!origin.ok) return jsonError("ORIGIN_REJECTED", "This request failed its origin checks.", 403);
+  if (!origin.ok)
+    return jsonError("ORIGIN_REJECTED", "This request failed its origin checks.", 403);
 
   let cfg: ReturnType<typeof config>;
   try {
@@ -51,16 +47,25 @@ export async function POST(req: Request) {
   }
   const parsed = sealRequestSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonError("INVALID_INPUT", "Check the public name, accepted versions and idempotency key.", 400);
+    return jsonError(
+      "INVALID_INPUT",
+      "Check the public name, accepted versions and idempotency key.",
+      400,
+    );
   }
 
   const person = await getPersonByAuthUserId(session.user.id);
   if (!person) return jsonError("NO_SESSION", "Sign in before sealing your entry.", 401);
 
-  await ensurePerson({ authUserId: session.user.id, email: session.user.email, emailVerified: true });
+  await ensurePerson({
+    authUserId: session.user.id,
+    email: session.user.email,
+    emailVerified: true,
+  });
 
   const limited = await consumeRateLimit("seal:" + person.id, 60 * 60 * 1000, 10);
-  if (!limited.allowed) return jsonError("RATE_LIMITED", "Too many attempts. Try again later.", 429);
+  if (!limited.allowed)
+    return jsonError("RATE_LIMITED", "Too many attempts. Try again later.", 429);
 
   const predecessor = await resolvePredecessorForSeal({
     personId: person.id,
@@ -86,10 +91,11 @@ export async function POST(req: Request) {
       ordinalLabel: String(result.ordinal).padStart(6, "0"),
       displayName: result.displayName,
       sealTs: result.sealTs.toISOString(),
-      firstContinuationOfOrdinal:
-        result.firstContinuationOfOrdinal !== undefined
-          ? String(result.firstContinuationOfOrdinal).padStart(6, "0")
+      predecessorOrdinal:
+        result.predecessorOrdinal !== undefined
+          ? String(result.predecessorOrdinal).padStart(6, "0")
           : null,
+      isFirstContinuation: result.isFirstContinuation,
       receipt: result.receipt,
       relayUrl,
       legalStatusLine: "OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED",
@@ -106,7 +112,9 @@ export async function POST(req: Request) {
       return jsonError(
         "ALREADY_SEALED",
         error.existingOrdinal !== null
-          ? "This account already sealed entry #" + String(error.existingOrdinal).padStart(6, "0") + "."
+          ? "This account already sealed entry #" +
+              String(error.existingOrdinal).padStart(6, "0") +
+              "."
           : error.message,
         409,
       );
@@ -127,4 +135,3 @@ export async function POST(req: Request) {
     throw error;
   }
 }
-

@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from "vitest";
 import { normalizeDisplayName } from "@/ledger/seal";
 
@@ -15,4 +14,3 @@ describe("normalizeDisplayName", () => {
     expect(normalizeDisplayName("\u5b89\u5ba4 \u5948\u7f8e")).toBe("\u5b89\u5ba4 \u5948\u7f8e");
   });
 });
-

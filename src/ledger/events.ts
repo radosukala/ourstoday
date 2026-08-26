@@ -1,4 +1,3 @@
-
 import { sha256Hex, canonicalJson } from "@/security/digest";
 
 /** Canonical event types (Founding Relay Protocol section 11). */
@@ -56,4 +55,3 @@ export function digestEvent(event: Parameters<typeof computeEventMaterial>[0]): 
 export function newEventId(): string {
   return crypto.randomUUID();
 }
-

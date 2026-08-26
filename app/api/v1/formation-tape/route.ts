@@ -1,4 +1,3 @@
-
 import { formationTape } from "@/ledger/queries";
 import { jsonOk } from "@/lib/http";
 
@@ -13,4 +12,3 @@ export async function GET() {
     return jsonOk({ events: [], degraded: true });
   }
 }
-

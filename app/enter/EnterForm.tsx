@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -40,7 +39,9 @@ export function EnterForm() {
 
   return (
     <form onSubmit={submit} noValidate>
-      <label className="field-label" htmlFor="entry-email">YOUR EMAIL ADDRESS</label>
+      <label className="field-label" htmlFor="entry-email">
+        YOUR EMAIL ADDRESS
+      </label>
       <input
         id="entry-email"
         name="email"
@@ -60,10 +61,14 @@ export function EnterForm() {
       <button className="action-button inverse" type="submit" disabled={busy}>
         {busy ? "SENDING…" : "SEND MY MAGIC LINK"} <span aria-hidden="true">→</span>
       </button>
-      <p className="form-status" role="status" aria-live="polite" data-state={error ? "error" : undefined}>
+      <p
+        className="form-status"
+        role="status"
+        aria-live="polite"
+        data-state={error ? "error" : undefined}
+      >
         {error}
       </p>
     </form>
   );
 }
-

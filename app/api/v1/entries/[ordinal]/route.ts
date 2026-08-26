@@ -1,4 +1,3 @@
-
 import { getPublicEntry } from "@/ledger/queries";
 import { jsonError, jsonOk } from "@/lib/http";
 import { STATUS_LINE } from "@/legal/documents";
@@ -18,11 +17,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ordinal: strin
     entry: {
       ordinalLabel: String(entry.ordinal).padStart(6, "0"),
       displayName:
-        entry.displayName ??
-        (entry.publicStatus === "WITHDRAWN" ? "[WITHDRAWN]" : "[UNAVAILABLE]"),
+        entry.displayName ?? (entry.publicStatus === "WITHDRAWN" ? "[WITHDRAWN]" : "[UNAVAILABLE]"),
       enteredAt: entry.enteredAt.toISOString(),
       predecessorOrdinal:
-        entry.predecessorOrdinal !== null ? String(entry.predecessorOrdinal).padStart(6, "0") : null,
+        entry.predecessorOrdinal !== null
+          ? String(entry.predecessorOrdinal).padStart(6, "0")
+          : null,
       relayState: entry.relayState,
       firstContinuationOrdinal:
         entry.firstContinuationOrdinal !== null
@@ -33,4 +33,3 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ordinal: strin
     legalStatusLine: STATUS_LINE,
   });
 }
-

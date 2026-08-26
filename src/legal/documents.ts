@@ -1,4 +1,3 @@
-
 /**
  * Single source of truth for institutional copy and document versions.
  * Every surface MUST render the lock, thesis and current legal-status truth
@@ -7,12 +6,10 @@
 
 export const LOCK_LINE = "THE NETWORK IS OURS. EVERYTHING ELSE CAN BE BUILT.";
 
-export const THESIS =
-  "OURS is a member-owned network that builds its own software in public.";
+export const THESIS = "OURS is a member-owned network that builds its own software in public.";
 
 /** Required companion qualifier while legal membership does not exist. */
-export const STATUS_LINE =
-  "OWNERSHIP: COMMITTED \u00b7 LEGAL MEMBERSHIP: NOT YET ISSUED";
+export const STATUS_LINE = "OWNERSHIP: COMMITTED \u00b7 LEGAL MEMBERSHIP: NOT YET ISSUED";
 
 export const OWNERSHIP_STATUS = "COMMITTED";
 export const LEGAL_MEMBERSHIP_STATUS = "NOT YET ISSUED";
@@ -66,4 +63,3 @@ export function assertNoForbiddenClaims(text: string): string[] {
   }
   return found;
 }
-

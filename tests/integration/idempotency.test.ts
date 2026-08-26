@@ -1,4 +1,3 @@
-
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { setupTestDatabase } from "./helpers";
 
@@ -27,24 +26,24 @@ describe("idempotent sealing", () => {
       authUserId: person.authUserId,
       displayName: "Idem Potent",
       acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
-          constitution: "ours-founding-constitution/0.1",
-          protocol: "ours.founding-relay/0.1",
-          privacyNotice: "ours-privacy-notice-draft/0.1",
-          legalStatus: "ours-legal-status/0.1",
-        },
+        declaration: "ours-founding-declaration/0.1",
+        constitution: "ours-founding-constitution/0.1",
+        protocol: "ours.founding-relay/0.1",
+        privacyNotice: "ours-privacy-notice-draft/0.1",
+        legalStatus: "ours-legal-status/0.1",
+      },
       idempotencyKey: "same-key-001",
     });
     const second = await sealEntry({
       authUserId: person.authUserId,
       displayName: "Idem Potent",
       acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
-          constitution: "ours-founding-constitution/0.1",
-          protocol: "ours.founding-relay/0.1",
-          privacyNotice: "ours-privacy-notice-draft/0.1",
-          legalStatus: "ours-legal-status/0.1",
-        },
+        declaration: "ours-founding-declaration/0.1",
+        constitution: "ours-founding-constitution/0.1",
+        protocol: "ours.founding-relay/0.1",
+        privacyNotice: "ours-privacy-notice-draft/0.1",
+        legalStatus: "ours-legal-status/0.1",
+      },
       idempotencyKey: "same-key-001",
     });
 
@@ -70,12 +69,12 @@ describe("idempotent sealing", () => {
       authUserId: person.authUserId,
       displayName: "Original Name",
       acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
-          constitution: "ours-founding-constitution/0.1",
-          protocol: "ours.founding-relay/0.1",
-          privacyNotice: "ours-privacy-notice-draft/0.1",
-          legalStatus: "ours-legal-status/0.1",
-        },
+        declaration: "ours-founding-declaration/0.1",
+        constitution: "ours-founding-constitution/0.1",
+        protocol: "ours.founding-relay/0.1",
+        privacyNotice: "ours-privacy-notice-draft/0.1",
+        legalStatus: "ours-legal-status/0.1",
+      },
       idempotencyKey: "conflict-key-1",
     });
 
@@ -131,4 +130,3 @@ describe("idempotent sealing", () => {
     expect(after[0]?.next_ordinal).toBe(before[0]?.next_ordinal);
   });
 });
-

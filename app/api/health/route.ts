@@ -1,4 +1,3 @@
-
 import { getSql } from "@/db/sqltype";
 import { foundingState } from "@/ledger/state";
 import { jsonError, jsonOk } from "@/lib/http";
@@ -20,4 +19,3 @@ export async function GET() {
     time: new Date().toISOString(),
   });
 }
-

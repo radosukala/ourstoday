@@ -1,6 +1,5 @@
-
 import { createHash, randomBytes } from "node:crypto";
-import { rawQuery } from "@/db/sqltype";
+import { rawQuery, type DbTimestamp } from "@/db/sqltype";
 import { config } from "@/config";
 import { signContextCookie, verifyContextCookie } from "@/security/relay";
 
@@ -17,7 +16,10 @@ const RELAY_COOKIE_MAX_AGE_MS = 30 * 60 * 1000;
 function relayCookieSecret(): string {
   const versions = [...config().relaySecrets.keys()].sort((a, b) => b - a);
   const first = versions[0];
-  return "relay-ctx-cookie:" + (first !== undefined ? (config().relaySecrets.get(first) ?? "") : "fallback");
+  return (
+    "relay-ctx-cookie:" +
+    (first !== undefined ? (config().relaySecrets.get(first) ?? "") : "fallback")
+  );
 }
 
 export interface PersonRow {
@@ -25,7 +27,7 @@ export interface PersonRow {
   auth_user_id: string;
   email_digest: string;
   lifecycle: string;
-  email_verified_at: Date | null;
+  email_verified_at: DbTimestamp | null;
 }
 
 export function sha256(input: string): string {
@@ -38,14 +40,15 @@ export async function ensurePerson(args: {
   emailVerified: boolean;
 }): Promise<PersonRow> {
   const digest = sha256(args.email.trim().toLowerCase());
+  // Server time is authoritative for these stamps, so PostgreSQL sets them.
   await rawQuery(
-    "INSERT INTO private.person (auth_user_id, email_digest, email_verified_at) VALUES ($1, $2, $3) ON CONFLICT (auth_user_id) DO NOTHING",
-    [args.authUserId, digest, args.emailVerified ? new Date() : null],
+    "INSERT INTO private.person (auth_user_id, email_digest, email_verified_at) VALUES ($1, $2, CASE WHEN $3::boolean THEN now() ELSE NULL END) ON CONFLICT (auth_user_id) DO NOTHING",
+    [args.authUserId, digest, args.emailVerified],
   );
   if (args.emailVerified) {
     await rawQuery(
-      "UPDATE private.person SET email_verified_at = COALESCE(email_verified_at, $2), updated_at = now() WHERE auth_user_id = $1",
-      [args.authUserId, new Date()],
+      "UPDATE private.person SET email_verified_at = COALESCE(email_verified_at, now()), updated_at = now() WHERE auth_user_id = $1",
+      [args.authUserId],
     );
   }
   const rows = (await rawQuery(
@@ -94,7 +97,11 @@ export async function resolvePredecessorForSeal(args: {
 }): Promise<ResolvedPredecessor | undefined> {
   // (a) device cookie
   const rawCookie = readCookie(args.cookieHeader, RELAY_COOKIE_NAME);
-  const verified = verifyContextCookie(rawCookie ?? undefined, relayCookieSecret(), RELAY_COOKIE_MAX_AGE_MS);
+  const verified = verifyContextCookie(
+    rawCookie ?? undefined,
+    relayCookieSecret(),
+    RELAY_COOKIE_MAX_AGE_MS,
+  );
   if (verified?.value) {
     const rows = await rawQuery<{ id: string; predecessor_entry_id: string; state: string }>(
       "SELECT id, predecessor_entry_id, state FROM private.relay_token_record WHERE id = $1 AND state = 'ACTIVE'",
@@ -107,7 +114,10 @@ export async function resolvePredecessorForSeal(args: {
   }
 
   // (b) consumed, email-bound entry context (cross-device case)
-  const ctxRows = await rawQuery<{ relay_token_record_id: string | null; predecessor_entry_id: string | null }>(
+  const ctxRows = await rawQuery<{
+    relay_token_record_id: string | null;
+    predecessor_entry_id: string | null;
+  }>(
     "SELECT ec.relay_token_record_id, r.predecessor_entry_id FROM private.entry_context ec LEFT JOIN private.relay_token_record r ON r.id = ec.relay_token_record_id WHERE ec.consumed_by_person_id = $1 AND ec.state = 'CONSUMED' AND ec.consumed_at > now() - interval '24 hours' ORDER BY ec.consumed_at DESC LIMIT 1",
     [args.personId],
   );
@@ -121,7 +131,11 @@ export async function resolvePredecessorForSeal(args: {
 /** Validate the relay cookie for a magic-link request and return the relay record ID. */
 export async function relayRecordFromDevice(cookieHeader: string | null): Promise<string | null> {
   const raw = readCookie(cookieHeader, RELAY_COOKIE_NAME);
-  const verified = verifyContextCookie(raw ?? undefined, relayCookieSecret(), RELAY_COOKIE_MAX_AGE_MS);
+  const verified = verifyContextCookie(
+    raw ?? undefined,
+    relayCookieSecret(),
+    RELAY_COOKIE_MAX_AGE_MS,
+  );
   if (!verified?.value) return null;
   const rows = await rawQuery<{ id: string }>(
     "SELECT id FROM private.relay_token_record WHERE id = $1 AND state = 'ACTIVE'",

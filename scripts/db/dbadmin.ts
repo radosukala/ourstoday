@@ -1,4 +1,3 @@
-
 import postgres from "postgres";
 
 /** Administrative helpers against the direct (owner) connection. */
@@ -35,4 +34,3 @@ export async function dropDatabase(name: string): Promise<void> {
     await sql.end({ timeout: 5 });
   }
 }
-

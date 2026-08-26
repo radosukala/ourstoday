@@ -1,4 +1,3 @@
-
 /**
  * LOCAL CONCEPT DATA ONLY.
  *
@@ -8,24 +7,28 @@
  * run against a production or shared database. It refuses to do anything if
  * any entry already exists, so re-running is safe and honest.
  */
-import { createHash } from "node:crypto";
 import postgres from "postgres";
 import { directUrl } from "./dbadmin";
+import { digestEvent } from "../../src/ledger/events";
 
 const ORIGIN_DECLARATION_VERSION = "ours-founding-declaration/0.1";
 const ORIGIN_PROTOCOL_VERSION = "ours.founding-relay/0.1";
 const ORIGIN_LEGAL_STATUS_VERSION = "ours-legal-status/0.1";
 
-async function main() {
+/** Exported so the e2e provisioning script can reuse identical seeding. */
+export async function seedLocal(): Promise<void> {
   const sql = postgres(directUrl(), { max: 1 });
   try {
-    const existing = await sql.unsafe<{ count: string }[]>("SELECT count(*)::text AS count FROM ledger.entry");
+    const existing = await sql.unsafe<{ count: string }[]>(
+      "SELECT count(*)::text AS count FROM ledger.entry",
+    );
     if (Number(existing[0]?.count ?? "0") > 0) {
       console.log("seed-local: entries exist; refusing to add origin again.");
       return;
     }
     await sql.begin(async (tx) => {
-      const inserted = await tx.unsafe<{ id: string }[]>("INSERT INTO ledger.entry (ordinal, person_id, display_name, seal_ts, declaration_version, protocol_version, legal_status_version, origin_kind) VALUES (1, NULL, 'RADO', '2026-08-26T00:00:00Z', $1, $2, $3, 'DECLARED_ORIGIN') RETURNING id",
+      const inserted = await tx.unsafe<{ id: string }[]>(
+        "INSERT INTO ledger.entry (ordinal, person_id, display_name, seal_ts, declaration_version, protocol_version, legal_status_version, origin_kind) VALUES (1, NULL, 'RADO', '2026-08-26T00:00:00Z', $1, $2, $3, 'DECLARED_ORIGIN') RETURNING id",
         [ORIGIN_DECLARATION_VERSION, ORIGIN_PROTOCOL_VERSION, ORIGIN_LEGAL_STATUS_VERSION],
       );
       const entryId = inserted[0]?.id;
@@ -42,28 +45,26 @@ async function main() {
         declaredBy: "FOUNDER_STEWARD",
       };
       const occurredAt = new Date("2026-08-26T00:00:00Z");
-      const material = JSON.stringify({
+      const digest = digestEvent({
         type: "ledger.entry.sealed",
         payload,
-        occurredAt: occurredAt.toISOString(),
+        occurredAt,
         prevDigest: null,
       });
-      const digest = createHash("sha256").update(material).digest("hex");
       await tx.unsafe(
-        "INSERT INTO ledger.event (id, type, schema_version, occurred_at, actor_type, actor_ref, subject_type, subject_ref, authority_ref, privacy_class, payload, prev_digest, digest) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+        "INSERT INTO ledger.event (id, type, schema_version, occurred_at, actor_type, actor_ref, subject_type, subject_ref, authority_ref, privacy_class, payload, prev_digest, digest) VALUES ($1, $2, $3, $4::timestamptz, $5, $6, $7, $8, $9, $10, $11::text::jsonb, $12, $13)",
         [
           crypto.randomUUID(),
           "ledger.entry.sealed",
           "ours.founding-relay/0.1",
-          occurredAt,
+          occurredAt.toISOString(),
           "FOUNDER_STEWARD",
           "RADO",
           "ledger.entry",
           entryId,
           "DAY-1-DECLARATION · LOCAL CONCEPT SEED",
           "PUBLIC",
-          // Object param: postgres.js serializes jsonb itself.
-          payload,
+          JSON.stringify(payload),
           null,
           digest,
         ],
@@ -76,5 +77,5 @@ async function main() {
   }
 }
 
-void main();
-
+// Run directly only via `pnpm run db:seed:local`; imports (e2e provision) call seedLocal().
+if (process.argv[1]?.endsWith("seed-local.ts")) void seedLocal();

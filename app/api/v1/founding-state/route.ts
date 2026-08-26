@@ -1,4 +1,3 @@
-
 import { foundingState } from "@/ledger/state";
 import { listPublicEntries } from "@/ledger/queries";
 import { jsonOk } from "@/lib/http";
@@ -26,4 +25,3 @@ export async function GET() {
     legalStatusLine: STATUS_LINE,
   });
 }
-

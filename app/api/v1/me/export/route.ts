@@ -1,4 +1,3 @@
-
 import { getAuth } from "@/auth/auth";
 import { endpointContext } from "@/auth/session";
 import { getSql } from "@/db/sqltype";
@@ -77,4 +76,3 @@ export async function GET(req: Request) {
     },
   });
 }
-

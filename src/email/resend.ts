@@ -1,4 +1,3 @@
-
 import { Resend } from "resend";
 import type { OutboundEmail, EmailDeliveryResult } from "./types";
 
@@ -18,4 +17,3 @@ export async function sendViaResend(
   if (error) throw new Error(`Resend delivery failed: ${error.message}`);
   return { provider: "resend", id: data?.id };
 }
-

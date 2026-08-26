@@ -1,4 +1,3 @@
-
 /**
  * Minimal structured logger with hard redaction rules.
  * Never log: email addresses, raw tokens, magic URLs, session cookies,
@@ -41,4 +40,3 @@ export const log = {
   warn: (event: string, fields?: Record<string, unknown>) => emit("warn", event, fields),
   error: (event: string, fields?: Record<string, unknown>) => emit("error", event, fields),
 };
-

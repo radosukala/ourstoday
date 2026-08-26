@@ -1,4 +1,3 @@
-
 /**
  * Session-bound CSRF controls for OURS mutation routes. Better Auth protects
  * its own endpoints; ledger endpoints must not assume that middleware does it
@@ -53,4 +52,3 @@ export function checkMutationOrigin(req: Request): OriginCheckResult {
   }
   return { ok: true };
 }
-

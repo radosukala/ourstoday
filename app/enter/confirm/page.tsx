@@ -1,4 +1,3 @@
-
 import { Masthead } from "@/components/Masthead";
 import { ConfirmClient } from "./ConfirmClient";
 
@@ -16,10 +15,11 @@ export const dynamic = "force-static";
 export default function ConfirmPage() {
   return (
     <>
-      <a className="skip-link" href="#main">Skip to confirmation</a>
+      <a className="skip-link" href="#main">
+        Skip to confirmation
+      </a>
       <Masthead formationStatus="ENTRY · CONFIRM" />
       <ConfirmClient />
     </>
   );
 }
-

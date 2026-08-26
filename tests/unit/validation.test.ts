@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from "vitest";
 import {
   displayNameSchema,
@@ -40,13 +39,14 @@ describe("validation schemas", () => {
   });
 
   it("requires every accepted version on seal requests", () => {
-    expect(sealRequestSchema.safeParse({
-      displayName: "RADO",
-      acceptedVersions: VERSIONS,
-      idempotencyKey: "12345678",
-    }).success).toBe(true);
+    expect(
+      sealRequestSchema.safeParse({
+        displayName: "RADO",
+        acceptedVersions: VERSIONS,
+        idempotencyKey: "12345678",
+      }).success,
+    ).toBe(true);
     const missing = { ...VERSIONS, privacyNotice: undefined };
     expect(documentVersionsSchema.safeParse(missing).success).toBe(false);
   });
 });
-

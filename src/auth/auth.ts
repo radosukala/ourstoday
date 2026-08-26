@@ -1,4 +1,3 @@
-
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins";
@@ -6,7 +5,11 @@ import { nextCookies } from "better-auth/next-js";
 import { config } from "@/config";
 import { getDb } from "@/db/client";
 import * as authSchema from "@/db/schema/auth";
-import { buildConfirmationUrl, deliverMagicLinkEmail, MAGIC_LINK_EXPIRY_MINUTES } from "@/email/magic-link";
+import {
+  buildConfirmationUrl,
+  deliverMagicLinkEmail,
+  MAGIC_LINK_EXPIRY_MINUTES,
+} from "@/email/magic-link";
 
 /**
  * Better Auth owns sessions and authentication tables. The ONLY public
@@ -50,6 +53,9 @@ function createAuth() {
         session: authSchema.session,
         account: authSchema.account,
         verification: authSchema.verification,
+        // Required by rateLimit.storage = "database" below; without it every
+        // authenticated request throws inside the adapter.
+        rateLimit: authSchema.rateLimit,
       },
     }),
     emailAndPassword: { enabled: false },
@@ -81,4 +87,3 @@ function createAuth() {
     ],
   });
 }
-

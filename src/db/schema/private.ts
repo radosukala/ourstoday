@@ -1,4 +1,3 @@
-
 /**
  * Private application records. Nothing here may appear in any public
  * projection. See docs/operations/DATA-MAP.md before adding fields.
@@ -88,7 +87,9 @@ export const consentRecord = privateNs.table(
     subjectType: text("subject_type").notNull(),
     subjectId: uuid("subject_id"),
     documentVersions: jsonb("document_versions").$type<Record<string, string>>().notNull(),
-    acceptedAt: timestamp("accepted_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     supersededById: uuid("superseded_by_id"),
   },
   (t) => [index("private_consent_person_idx").on(t.personId)],
@@ -149,7 +150,9 @@ export const withdrawalRequest = privateNs.table(
     reasonCode: text("reason_code").notNull(),
     reasonDetail: text("reason_detail"),
     state: text("state").notNull().default("REQUESTED"),
-    requestedAt: timestamp("requested_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    requestedAt: timestamp("requested_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: "date" }),
     resolvedByActor: text("resolved_by_actor"),
     receiptEventId: uuid("receipt_event_id"),
@@ -168,7 +171,9 @@ export const correctionRequest = privateNs.table(
     proposedDisplayName: text("proposed_display_name").notNull(),
     reasonDetail: text("reason_detail"),
     state: text("state").notNull().default("REQUESTED"),
-    requestedAt: timestamp("requested_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    requestedAt: timestamp("requested_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: "date" }),
     resolvedByActor: text("resolved_by_actor"),
     receiptEventId: uuid("receipt_event_id"),
@@ -215,14 +220,10 @@ export const stewardAssignment = privateNs.table(
 );
 
 /** Application-level database rate limits (per bucket, sliding window). */
-export const appRateLimit = privateNs.table(
-  "app_rate_limit",
-  {
-    bucketKey: text("bucket_key").primaryKey(),
-    windowStartMs: bigint("window_start_ms", { mode: "number" }).notNull(),
-    count: bigint("count", { mode: "number" }).notNull(),
-  },
-);
+export const appRateLimit = privateNs.table("app_rate_limit", {
+  bucketKey: text("bucket_key").primaryKey(),
+  windowStartMs: bigint("window_start_ms", { mode: "number" }).notNull(),
+  count: bigint("count", { mode: "number" }).notNull(),
+});
 
 /** sha256 helper lives in src/security/digest.ts to keep this file pure DDL mapping. */
-

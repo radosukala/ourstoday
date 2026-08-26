@@ -1,6 +1,5 @@
-
 import { NextResponse } from "next/server";
-import { getSql } from "@/db/sqltype";
+import { getSql, toDate, type DbTimestamp } from "@/db/sqltype";
 import { verifyRelayToken } from "@/security/relay";
 import { relayCookieSetHeaders, RELAY_COOKIE_CONSTANTS } from "@/lib/person";
 import { config } from "@/config";
@@ -43,7 +42,10 @@ function page(inner: string): NextResponse {
   });
 }
 
-async function handle(req: Request, ctx: { params: Promise<{ token: string }> }): Promise<NextResponse> {
+async function handle(
+  req: Request,
+  ctx: { params: Promise<{ token: string }> },
+): Promise<NextResponse> {
   const { token } = await ctx.params;
 
   let cfgSecrets: Map<number, string> | null = null;
@@ -58,8 +60,10 @@ async function handle(req: Request, ctx: { params: Promise<{ token: string }> })
     return page(shellInvalid());
   }
 
-  const jtiDigest = (await import("node:crypto")).createHash("sha256")
-    .update(verified.payload.jti).digest("hex");
+  const jtiDigest = (await import("node:crypto"))
+    .createHash("sha256")
+    .update(verified.payload.jti)
+    .digest("hex");
   let rows: { id: string; state: string; predecessor_entry_id: string }[];
   try {
     rows = await getSql().unsafe(
@@ -75,7 +79,14 @@ async function handle(req: Request, ctx: { params: Promise<{ token: string }> })
   }
 
   // Read-only public context of the predecessor.
-  const predRows = await getSql().unsafe<{ ordinal: number; display_name: string | null; entered_at: Date; public_status: string }[]>(
+  const predRows = await getSql().unsafe<
+    {
+      ordinal: number;
+      display_name: string | null;
+      entered_at: DbTimestamp;
+      public_status: string;
+    }[]
+  >(
     "SELECT ordinal, display_name, entered_at, public_status FROM public.founding_ledger WHERE ordinal = (SELECT ordinal FROM ledger.entry WHERE id = $1)",
     [record.predecessor_entry_id],
   );
@@ -86,15 +97,18 @@ async function handle(req: Request, ctx: { params: Promise<{ token: string }> })
     shellValid({
       predecessorLabel: "#" + String(pred.ordinal).padStart(6, "0"),
       name: pred.display_name ?? "[WITHDRAWN]",
-      entered: new Date(pred.entered_at).toISOString().slice(0, 10),
+      entered: toDate(pred.entered_at).toISOString().slice(0, 10),
     }),
   );
   if (req.method === "GET") {
     const cookieSpec = relayCookieSetHeaders(record.id);
     res.headers.append(
       "set-cookie",
-      cookieSpec.name + "=" + cookieSpec.value +
-        "; Path=/; Max-Age=" + RELAY_COOKIE_CONSTANTS.maxAgeSeconds +
+      cookieSpec.name +
+        "=" +
+        cookieSpec.value +
+        "; Path=/; Max-Age=" +
+        RELAY_COOKIE_CONSTANTS.maxAgeSeconds +
         "; HttpOnly; SameSite=Lax" +
         (process.env.APP_ENV === "production" ? "; Secure" : ""),
     );
@@ -109,13 +123,19 @@ function shellValid(p: { predecessorLabel: string; name: string; entered: string
     '    <div class="entry-copy">',
     '      <p class="eyebrow signal-text">THE FOUNDING RELAY · CONTINUATION INVITATION</p>',
     '      <h2 id="relay-title">A line continued to you.</h2>',
-    '      <p class="large-copy">You were invited through ' + p.predecessorLabel + " (" + escapeHtml(p.name) + ", entered " + escapeHtml(p.entered) + "). Entering assigns YOUR OWN number when your verified entry seals - it never activates anyone else.</p>",
+    '      <p class="large-copy">You were invited through ' +
+      p.predecessorLabel +
+      " (" +
+      escapeHtml(p.name) +
+      ", entered " +
+      escapeHtml(p.entered) +
+      "). Entering assigns YOUR OWN number when your verified entry seals - it never activates anyone else.</p>",
     '      <ol class="relay-sequence" aria-label="What happens next">',
-    '        <li><b>01</b><span>YOU VERIFY YOUR EMAIL</span></li>',
-    '        <li><b>02</b><span>YOU CHOOSE A PUBLIC NAME</span></li>',
-    '        <li><b>03</b><span>YOU SEAL YOUR OWN PLACE</span></li>',
-    '        <li><b>04</b><span>THE LINE IS RECORDED THROUGH YOU</span></li>',
-    '      </ol>',
+    "        <li><b>01</b><span>YOU VERIFY YOUR EMAIL</span></li>",
+    "        <li><b>02</b><span>YOU CHOOSE A PUBLIC NAME</span></li>",
+    "        <li><b>03</b><span>YOU SEAL YOUR OWN PLACE</span></li>",
+    "        <li><b>04</b><span>THE LINE IS RECORDED THROUGH YOU</span></li>",
+    "      </ol>",
     "    </div>",
     '    <div class="entry-panel">',
     '      <p class="large-copy" style="color:var(--paper-quiet)">THE NETWORK IS OURS. EVERYTHING ELSE CAN BE BUILT.</p>',
@@ -128,11 +148,17 @@ function shellValid(p: { predecessorLabel: string; name: string; entered: string
 }
 
 function shellInvalid(): string {
-  return shellGeneric("This relay link does not work.", "The link may be mistyped or revoked. Nothing was recorded by opening this page.");
+  return shellGeneric(
+    "This relay link does not work.",
+    "The link may be mistyped or revoked. Nothing was recorded by opening this page.",
+  );
 }
 
 function shellUnavailable(): string {
-  return shellGeneric("The relay is temporarily unavailable.", "Try again shortly. Nothing was recorded by opening this page.");
+  return shellGeneric(
+    "The relay is temporarily unavailable.",
+    "Try again shortly. Nothing was recorded by opening this page.",
+  );
 }
 
 function shellGeneric(title: string, note: string): string {
@@ -141,7 +167,9 @@ function shellGeneric(title: string, note: string): string {
     '  <section class="page-shell ink" aria-labelledby="relay-generic-title">',
     '    <p class="eyebrow signal-text">THE FOUNDING RELAY</p>',
     '    <h2 id="relay-generic-title">' + escapeHtml(title) + "</h2>",
-    '    <p class="large-copy" style="color:var(--paper-quiet);margin-top:22px">' + escapeHtml(note) + "</p>",
+    '    <p class="large-copy" style="color:var(--paper-quiet);margin-top:22px">' +
+      escapeHtml(note) +
+      "</p>",
     '    <p class="neutral-note" style="color:var(--paper-quiet)">THE NETWORK IS OURS. EVERYTHING ELSE CAN BE BUILT. OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED.</p>',
     '    <a class="small-button" href="/" style="margin-top:26px;display:inline-flex;color:var(--paper)">OURS TODAY</a>',
     "  </section>",
@@ -158,4 +186,3 @@ export async function HEAD(req: Request, ctx: { params: Promise<{ token: string 
   const res = await handle(req, ctx);
   return new NextResponse(null, { status: res.status, headers: res.headers });
 }
-

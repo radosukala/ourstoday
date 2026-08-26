@@ -1,10 +1,7 @@
-
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { setupTestDatabase, teardown as _t } from "./helpers";
+import { setupTestDatabase } from "./helpers";
 
-void _t;
-
-let teardown: () => Promise<void>;
+let teardown: () => Promise<void> = async () => {};
 
 beforeAll(async () => {
   ({ teardown } = await setupTestDatabase());
@@ -84,4 +81,3 @@ describe("canonical write gates", () => {
     ).rejects.toBeInstanceOf(Object);
   });
 });
-

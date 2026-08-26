@@ -1,4 +1,3 @@
-
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { setupTestDatabase } from "./helpers";
 
@@ -32,12 +31,12 @@ describe("atomic seal under concurrency", () => {
           authUserId: p.authUserId,
           displayName: "Concurrent " + i,
           acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
-          constitution: "ours-founding-constitution/0.1",
-          protocol: "ours.founding-relay/0.1",
-          privacyNotice: "ours-privacy-notice-draft/0.1",
-          legalStatus: "ours-legal-status/0.1",
-        },
+            declaration: "ours-founding-declaration/0.1",
+            constitution: "ours-founding-constitution/0.1",
+            protocol: "ours.founding-relay/0.1",
+            privacyNotice: "ours-privacy-notice-draft/0.1",
+            legalStatus: "ours-legal-status/0.1",
+          },
           idempotencyKey: "conc-key-" + String(i).padStart(3, "0"),
         }),
       ),
@@ -51,21 +50,33 @@ describe("atomic seal under concurrency", () => {
 
     // Event chain integrity: recompute the whole chain.
     const { rawQuery } = await import("@/db/sqltype");
-    const events = await rawQuery<{ seq: number; type: string; payload: unknown; prev_digest: string | null; digest: string }>(
-      "SELECT seq, type, payload, prev_digest, digest FROM ledger.event ORDER BY seq",
+    const events = await rawQuery<{
+      seq: number;
+      type: string;
+      occurred_at: Date | string;
+      payload: Record<string, unknown>;
+      prev_digest: string | null;
+      digest: string;
+    }>(
+      "SELECT seq, type, occurred_at, payload, prev_digest, digest FROM ledger.event ORDER BY seq",
     );
     expect(events.length).toBeGreaterThanOrEqual(N);
-    const { createHash } = await import("node:crypto");
+    const { digestEvent } = await import("@/ledger/events");
     let prev: string | null = null;
     for (const ev of events) {
       expect(ev.prev_digest).toBe(prev);
-      const material = JSON.stringify({
-        type: ev.type,
-        payload: ev.payload,
-        occurredAt: (ev as unknown as { occurredAt?: Date }).occurredAt,
-        prevDigest: ev.prev_digest,
-      });
-      void material;
+      // Recompute the digest FROM THE STORED ROW. This only works because the
+      // material is canonical JSON: PostgreSQL jsonb reorders keys, so an
+      // order-dependent digest would be unverifiable after a restore.
+      const occurredAt = ev.occurred_at;
+      expect(
+        digestEvent({
+          type: ev.type,
+          payload: ev.payload,
+          occurredAt: occurredAt instanceof Date ? occurredAt : new Date(occurredAt),
+          prevDigest: ev.prev_digest,
+        }),
+      ).toBe(ev.digest);
       prev = ev.digest;
     }
     // Counter advanced exactly N from its seed of 2.
@@ -120,4 +131,3 @@ describe("atomic seal under concurrency", () => {
     expect(Number(rows[0]?.count ?? "0")).toBe(1);
   });
 });
-

@@ -1,4 +1,3 @@
-
 import { config } from "@/config";
 import { getAuth } from "@/auth/auth";
 import { endpointContext } from "@/auth/session";
@@ -8,7 +7,7 @@ import { sha256Email } from "@/security/digest";
 import { ensurePerson } from "@/lib/person";
 import { jsonError, jsonOk } from "@/lib/http";
 import { magicLinkConfirmSchema } from "@/validation/schemas";
-import { getSql } from "@/db/sqltype";
+import { getSql, toDate, type DbTimestamp } from "@/db/sqltype";
 import { log } from "@/observability/logger";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +23,8 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const origin = checkMutationOrigin(req);
-  if (!origin.ok) return jsonError("ORIGIN_REJECTED", "This request failed its origin checks.", 403);
+  if (!origin.ok)
+    return jsonError("ORIGIN_REJECTED", "This request failed its origin checks.", 403);
 
   let body: unknown;
   try {
@@ -40,15 +40,19 @@ export async function POST(req: Request) {
     60 * 1000,
     10,
   );
-  if (!limited.allowed) return jsonError("RATE_LIMITED", "Too many attempts. Try again shortly.", 429);
+  if (!limited.allowed)
+    return jsonError("RATE_LIMITED", "Too many attempts. Try again shortly.", 429);
 
   const cfg = config();
+  // No callbackURL on purpose. better-auth's magic-link/verify returns the
+  // verified user as JSON only when callbackURL is absent; supplying one makes
+  // it answer 302 instead, which this route cannot read and would report as an
+  // expired link. Failures still redirect, so !upstream.ok remains the generic
+  // expired/used/invalid signal. This route owns the redirect to /enter/continue.
   const verifyUrl =
     cfg.appUrl.replace(/\/+$/, "") +
     "/api/auth/magic-link/verify?token=" +
-    encodeURIComponent(parsed.data.token) +
-    "&callbackURL=" +
-    encodeURIComponent("/enter/continue");
+    encodeURIComponent(parsed.data.token);
 
   const forwardedHeaders = endpointContext(req);
 
@@ -67,7 +71,9 @@ export async function POST(req: Request) {
 
   let user: { id: string; email: string; emailVerified?: boolean };
   try {
-    const payload = (await upstream.json()) as { user?: { id: string; email: string; emailVerified?: boolean } };
+    const payload = (await upstream.json()) as {
+      user?: { id: string; email: string; emailVerified?: boolean };
+    };
     if (!payload.user?.id || !payload.user.email) throw new Error("no user");
     user = payload.user;
   } catch {
@@ -82,7 +88,14 @@ export async function POST(req: Request) {
 
   // Consume the email-bound entry context when it matches THIS identity.
   if (parsed.data.ctxId) {
-    const rows = await getSql().unsafe<{ state: string; email_digest: string; expires_at: Date; consumed_by_person_id: string | null }[]>(
+    const rows = await getSql().unsafe<
+      {
+        state: string;
+        email_digest: string;
+        expires_at: DbTimestamp;
+        consumed_by_person_id: string | null;
+      }[]
+    >(
       "SELECT state, email_digest, expires_at, consumed_by_person_id FROM private.entry_context WHERE id = $1",
       [parsed.data.ctxId],
     );
@@ -91,7 +104,7 @@ export async function POST(req: Request) {
       ctx &&
       ctx.state === "ACTIVE" &&
       !ctx.consumed_by_person_id &&
-      new Date(ctx.expires_at).getTime() > Date.now() &&
+      toDate(ctx.expires_at).getTime() > Date.now() &&
       ctx.email_digest === sha256Email(user.email)
     ) {
       await getSql().unsafe(
@@ -99,9 +112,10 @@ export async function POST(req: Request) {
         [parsed.data.ctxId, person.id],
       );
     } else if (ctx) {
-      await getSql().unsafe("UPDATE private.entry_context SET state = 'INVALID' WHERE id = $1 AND state = 'ACTIVE'", [
-        parsed.data.ctxId,
-      ]);
+      await getSql().unsafe(
+        "UPDATE private.entry_context SET state = 'INVALID' WHERE id = $1 AND state = 'ACTIVE'",
+        [parsed.data.ctxId],
+      );
       log.warn("entry_context.mismatch_or_expired", {});
     }
   }
@@ -111,4 +125,3 @@ export async function POST(req: Request) {
   for (const cookie of setCookies) res.headers.append("set-cookie", cookie);
   return res;
 }
-

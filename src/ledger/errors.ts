@@ -1,4 +1,3 @@
-
 /** Typed seal failures mapped to honest machine states at the route layer. */
 
 export class LedgerClosedError extends Error {
@@ -46,4 +45,3 @@ export class UnverifiedPersonError extends Error {
     super("Email verification has not completed for this session.");
   }
 }
-

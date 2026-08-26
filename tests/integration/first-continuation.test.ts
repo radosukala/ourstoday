@@ -1,4 +1,3 @@
-
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { setupTestDatabase, fixtureVerifiedPerson } from "./helpers";
 import { sha256Hex } from "@/security/digest";
@@ -31,12 +30,12 @@ async function sealPredecessor(label: string): Promise<{
     authUserId: person.authUserId,
     displayName: "Relay Owner",
     acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
-          constitution: "ours-founding-constitution/0.1",
-          protocol: "ours.founding-relay/0.1",
-          privacyNotice: "ours-privacy-notice-draft/0.1",
-          legalStatus: "ours-legal-status/0.1",
-        },
+      declaration: "ours-founding-declaration/0.1",
+      constitution: "ours-founding-constitution/0.1",
+      protocol: "ours.founding-relay/0.1",
+      privacyNotice: "ours-privacy-notice-draft/0.1",
+      legalStatus: "ours-legal-status/0.1",
+    },
     idempotencyKey: "pred-key-" + Math.random().toString(36).slice(2),
   });
   const jtiDigest = sha256Hex("itest-jti-" + sealed.entryId);
@@ -44,7 +43,7 @@ async function sealPredecessor(label: string): Promise<{
     "INSERT INTO private.relay_token_record (jti_digest, predecessor_entry_id, signing_key_version) VALUES ($1, $2, 1) RETURNING id",
     [jtiDigest, sealed.entryId],
   );
-  return { entryId: sealed.entryId, relayRecordId: rec[0]!!.id, ordinal: sealed.ordinal };
+  return { entryId: sealed.entryId, relayRecordId: rec[0]!.id, ordinal: sealed.ordinal };
 }
 
 describe("relay attribution and the First Continuation race", () => {
@@ -64,12 +63,12 @@ describe("relay attribution and the First Continuation race", () => {
           authUserId: p.authUserId,
           displayName: "Successor " + i,
           acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
-          constitution: "ours-founding-constitution/0.1",
-          protocol: "ours.founding-relay/0.1",
-          privacyNotice: "ours-privacy-notice-draft/0.1",
-          legalStatus: "ours-legal-status/0.1",
-        },
+            declaration: "ours-founding-declaration/0.1",
+            constitution: "ours-founding-constitution/0.1",
+            protocol: "ours.founding-relay/0.1",
+            privacyNotice: "ours-privacy-notice-draft/0.1",
+            legalStatus: "ours-legal-status/0.1",
+          },
           idempotencyKey: "succ-key-" + String(i).padStart(3, "0"),
           predecessor: { entryId: pred.entryId, relayRecordId: pred.relayRecordId },
         }),
@@ -80,30 +79,34 @@ describe("relay attribution and the First Continuation race", () => {
     const ordinals = results.map((r) => r.ordinal);
     expect(new Set(ordinals).size).toBe(N);
 
-    // Exactly one First Continuation.
-    const fcs = results.filter((r) => r.firstContinuationOfOrdinal !== undefined);
+    // Every successor records the lineage it arrived through...
+    expect(results.every((r) => r.predecessorOrdinal === pred.ordinal)).toBe(true);
+    // ...but exactly one of them wins the First Continuation.
+    const fcs = results.filter((r) => r.isFirstContinuation);
     expect(fcs.length).toBe(1);
-    // The flag carries the WINNER'S OWN ordinal (the place through which the
-    // line continued), never the predecessor's.
-    expect(fcs[0]?.firstContinuationOfOrdinal).toBe(fcs[0]?.ordinal);
     expect(fcs[0]?.ordinal).not.toBe(pred.ordinal);
+    // Losing the race costs a successor nothing: they still hold their place.
+    expect(results.filter((r) => !r.isFirstContinuation).length).toBe(N - 1);
 
     const { rawQuery } = await import("@/db/sqltype");
-    const fcRows = await rawQuery<{ successor_entry_id: string; predecessor_entry_id: string }[]>(
+    const fcRows = await rawQuery<{ successor_entry_id: string; predecessor_entry_id: string }>(
       "SELECT successor_entry_id, predecessor_entry_id FROM ledger.first_continuation WHERE predecessor_entry_id = $1",
       [pred.entryId],
     );
     expect(fcRows.length).toBe(1);
 
     // Every arrival recorded exactly once.
-    const arrivalRows = await rawQuery<{ count: string }[]>(
+    const arrivalRows = await rawQuery<{ count: string }>(
       "SELECT count(*)::text AS count FROM ledger.relay_arrival WHERE predecessor_entry_id = $1",
       [pred.entryId],
     );
     expect(Number(arrivalRows[0]?.count ?? "0")).toBe(N);
 
     // Public projection reflects CONTINUED state and FC ordinal.
-    const viewRows = await rawQuery<{ relay_state: string; first_continuation_ordinal: number | null }[]>(
+    const viewRows = await rawQuery<{
+      relay_state: string;
+      first_continuation_ordinal: number | null;
+    }>(
       "SELECT relay_state, first_continuation_ordinal FROM public.founding_ledger WHERE ordinal = $1",
       [pred.ordinal],
     );
@@ -122,16 +125,16 @@ describe("relay attribution and the First Continuation race", () => {
       authUserId: person.authUserId,
       displayName: "Self Referencer",
       acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
-          constitution: "ours-founding-constitution/0.1",
-          protocol: "ours.founding-relay/0.1",
-          privacyNotice: "ours-privacy-notice-draft/0.1",
-          legalStatus: "ours-legal-status/0.1",
-        },
+        declaration: "ours-founding-declaration/0.1",
+        constitution: "ours-founding-constitution/0.1",
+        protocol: "ours.founding-relay/0.1",
+        privacyNotice: "ours-privacy-notice-draft/0.1",
+        legalStatus: "ours-legal-status/0.1",
+      },
       idempotencyKey: "self-key-" + Math.random().toString(36).slice(2),
     });
     const { rawQuery } = await import("@/db/sqltype");
-    const rec = await rawQuery<{ id: string }[]>(
+    const rec = await rawQuery<{ id: string }>(
       "INSERT INTO private.relay_token_record (jti_digest, predecessor_entry_id, signing_key_version) VALUES ($1, $2, 1) RETURNING id",
       [sha256Hex("self-jti-" + sealed.entryId), sealed.entryId],
     );
@@ -153,4 +156,3 @@ describe("relay attribution and the First Continuation race", () => {
     ).rejects.toMatchObject({});
   });
 });
-

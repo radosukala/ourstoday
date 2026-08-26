@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 /** Trim and case-normalize BEFORE validating the address format. */
@@ -25,7 +24,10 @@ export const idempotencyKeySchema = z
   .string()
   .min(8)
   .max(128)
-  .regex(/^[A-Za-z0-9._:-]+$/, "Allowed characters: letters, digits, dot, underscore, colon, hyphen");
+  .regex(
+    /^[A-Za-z0-9._:-]+$/,
+    "Allowed characters: letters, digits, dot, underscore, colon, hyphen",
+  );
 
 export const magicLinkRequestSchema = z.object({
   email: emailSchema,
@@ -57,4 +59,3 @@ export const withdrawalRequestSchema = z.object({
 export const relayIssueSchema = z.object({
   channelHint: z.enum(["x", "linkedin", "direct", "web", "unknown"]).default("direct"),
 });
-

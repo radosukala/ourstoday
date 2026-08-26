@@ -1,4 +1,3 @@
-
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
@@ -9,10 +8,12 @@ import {
 } from "@/security/relay";
 import { sha256Hex } from "@/security/digest";
 
-const SECRETS = new Map([[1, "unit-test-secret-0123456789abcdef0123456789abcdef"]]);
+const SECRET_V1 = "unit-test-secret-0123456789abcdef0123456789abcdef";
+const SECRET_V2 = "new-secret-0123456789abcdef0123456789abcdef";
+const SECRETS = new Map([[1, SECRET_V1]]);
 const ROTATED = new Map<number, string>([
-  [2, "new-secret-0123456789abcdef0123456789abcdef"],
-  [1, SECRETS.get(1) as string],
+  [2, SECRET_V2],
+  [1, SECRET_V1],
 ]);
 
 describe("relay tokens", () => {
@@ -26,7 +27,7 @@ describe("relay tokens", () => {
   it("rejects tampered tokens with BAD_SIGNATURE", () => {
     const { token } = signRelayToken(SECRETS);
     const parts = token.split(".");
-    const forged = parts[0] + "." + sha256Hex(parts[0]).slice(0, 43);
+    const forged = parts[0] + "." + sha256Hex(parts[0] ?? "").slice(0, 43);
     const result = verifyRelayToken(forged, SECRETS);
     expect(result).toEqual({ ok: false, reason: "BAD_SIGNATURE" });
   });
@@ -44,7 +45,10 @@ describe("relay tokens", () => {
     const newToken = signRelayToken(ROTATED);
     expect(verifyRelayToken(newToken.token, ROTATED).ok).toBe(true);
     expect(newToken.payload.kv).toBe(2);
-    expect(verifyRelayToken(newToken.token, SECRETS)).toEqual({ ok: false, reason: "UNKNOWN_KEY_VERSION" });
+    expect(verifyRelayToken(newToken.token, SECRETS)).toEqual({
+      ok: false,
+      reason: "UNKNOWN_KEY_VERSION",
+    });
   });
 
   it("jti is opaque high entropy; two tokens never share jtis", () => {
@@ -57,13 +61,13 @@ describe("relay tokens", () => {
 
 describe("context cookie", () => {
   it("signs and verifies within max age", () => {
-    const signed = signContextCookie("some-record-id", SECRETS.get(1) as string);
-    const verified = verifyContextCookie(signed, SECRETS.get(1) as string, 60_000);
+    const signed = signContextCookie("some-record-id", SECRET_V1);
+    const verified = verifyContextCookie(signed, SECRET_V1, 60_000);
     expect(verified?.value).toBe("some-record-id");
   });
 
   it("expires after maxAge", () => {
-    const secret = SECRETS.get(1) as string;
+    const secret = SECRET_V1;
     const issuedAtMs = Date.now() - 120_000;
     const mac = createHmac("sha256", secret)
       .update("ctx-cookie|record|" + String(issuedAtMs))
@@ -76,8 +80,7 @@ describe("context cookie", () => {
     const secret = SECRETS.get(1) as string;
     const signed = signContextCookie("record", secret);
     const parts = signed.split(".");
-    const forged = parts[0] + "." + parts[1] + "." + sha256Hex(parts[1]).slice(0, 43);
+    const forged = parts[0] + "." + parts[1] + "." + sha256Hex(parts[1] ?? "").slice(0, 43);
     expect(verifyContextCookie(forged, secret, 60_000)).toBeNull();
   });
 });
-

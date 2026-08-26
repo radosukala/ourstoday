@@ -1,4 +1,3 @@
-
 export interface OutboundEmail {
   to: string;
   subject: string;
@@ -10,4 +9,3 @@ export interface EmailDeliveryResult {
   provider: "capture" | "resend";
   id?: string;
 }
-

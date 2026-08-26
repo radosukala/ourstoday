@@ -1,4 +1,3 @@
-
 /**
  * Proves migrations apply cleanly to a fresh database, then removes it.
  */
@@ -27,4 +26,3 @@ async function main() {
 }
 
 void main();
-

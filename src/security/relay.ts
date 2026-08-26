@@ -1,4 +1,3 @@
-
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 /**
@@ -23,12 +22,15 @@ function b64url(input: Buffer | string): string {
 }
 
 export function hmacFor(payload: RelayTokenPayload, secret: string): string {
-  return createHmac("sha256", secret).update(b64url(JSON.stringify(payload))).digest("base64url");
+  return createHmac("sha256", secret)
+    .update(b64url(JSON.stringify(payload)))
+    .digest("base64url");
 }
 
-export function signRelayToken(
-  secrets: Map<number, string>,
-): { token: string; payload: RelayTokenPayload } {
+export function signRelayToken(secrets: Map<number, string>): {
+  token: string;
+  payload: RelayTokenPayload;
+} {
   const versions = [...secrets.keys()].sort((a, b) => b - a);
   const currentVersion = versions[0];
   if (currentVersion === undefined) throw new Error("No relay signing secret configured");
@@ -48,7 +50,10 @@ export type RelayTokenVerification =
   | { ok: false; reason: "MALFORMED" | "UNKNOWN_KEY_VERSION" | "BAD_SIGNATURE" };
 
 /** Constant-time MAC comparison; never throws on attacker input. */
-export function verifyRelayToken(token: string, secrets: Map<number, string>): RelayTokenVerification {
+export function verifyRelayToken(
+  token: string,
+  secrets: Map<number, string>,
+): RelayTokenVerification {
   const parts = token.split(".");
   if (parts.length !== 2 || !parts[0] || !parts[1]) return { ok: false, reason: "MALFORMED" };
   let payload: RelayTokenPayload;
@@ -106,4 +111,3 @@ export function verifyContextCookie(
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   return { value };
 }
-

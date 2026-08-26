@@ -1,4 +1,3 @@
-
 /**
  * Applies committed SQL migrations in filename order. Never runs from a
  * production request or app startup - only a human/script invokes this.
@@ -16,7 +15,9 @@ export async function migrate(sql: postgres.Sql): Promise<string[]> {
     checksum text NOT NULL,
     applied_at timestamptz NOT NULL DEFAULT now()
   )`;
-  const appliedRows = await sql.unsafe<{ filename: string }[]>("SELECT filename FROM _meta.schema_migrations");
+  const appliedRows = await sql.unsafe<{ filename: string }[]>(
+    "SELECT filename FROM _meta.schema_migrations",
+  );
   const applied = new Set(appliedRows.map((r) => r.filename));
   const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
   const ran: string[] = [];
@@ -52,4 +53,3 @@ async function main() {
 if (process.argv[1] && process.argv[1].endsWith("migrate.ts")) {
   void main();
 }
-

@@ -1,4 +1,3 @@
-
 import { createHash, randomBytes } from "node:crypto";
 import { config } from "@/config";
 import { getAuth } from "@/auth/auth";
@@ -16,7 +15,8 @@ export const dynamic = "force-dynamic";
 /** Issue an additional channel-specific relay variant for YOUR OWN entry. */
 export async function POST(req: Request, ctx: { params: Promise<{ ordinal: string }> }) {
   const origin = checkMutationOrigin(req);
-  if (!origin.ok) return jsonError("ORIGIN_REJECTED", "This request failed its origin checks.", 403);
+  if (!origin.ok)
+    return jsonError("ORIGIN_REJECTED", "This request failed its origin checks.", 403);
 
   const session = await getAuth().api.getSession({ headers: endpointContext(req) });
   if (!session?.user?.id) return jsonError("NO_SESSION", "Sign in first.", 401);
@@ -44,7 +44,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ ordinal: strin
   if (!entry) return jsonError("FORBIDDEN", "This entry is not yours or is not active.", 403);
 
   const limited = await consumeRateLimit("relay-issue:" + person.id, 60 * 60 * 1000, 30);
-  if (!limited.allowed) return jsonError("RATE_LIMITED", "Too many relays requested. Try later.", 429);
+  if (!limited.allowed)
+    return jsonError("RATE_LIMITED", "Too many relays requested. Try later.", 429);
 
   const cfg = config();
   const signed = signRelayToken(cfg.relaySecrets);
@@ -75,4 +76,3 @@ export async function POST(req: Request, ctx: { params: Promise<{ ordinal: strin
     notice: "Carry it where you choose. OURS never posts for you.",
   });
 }
-

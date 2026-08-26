@@ -1,6 +1,5 @@
-
-import { createHash } from "node:crypto";
-import { getSql, type OurSql } from "@/db/sqltype";
+import { getSql, jsonParam, tsParam, type OurSql } from "@/db/sqltype";
+import { digestEvent } from "./events";
 
 /**
  * Steward review actions. Every action appends receipted canonical events in
@@ -30,28 +29,21 @@ async function appendEvent(
   );
   const prevDigest = last[0]?.digest ?? null;
   const occurredAt = new Date();
-  const material = JSON.stringify({
-    type: args.type,
-    payload: args.payload,
-    occurredAt: occurredAt.toISOString(),
-    prevDigest,
-  });
-  const digest = createHash("sha256").update(material).digest("hex");
+  const digest = digestEvent({ type: args.type, payload: args.payload, occurredAt, prevDigest });
   await tx.unsafe(
-    "INSERT INTO ledger.event (id, type, schema_version, occurred_at, actor_type, actor_ref, subject_type, subject_ref, authority_ref, privacy_class, payload, prev_digest, digest) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+    "INSERT INTO ledger.event (id, type, schema_version, occurred_at, actor_type, actor_ref, subject_type, subject_ref, authority_ref, privacy_class, payload, prev_digest, digest) VALUES ($1, $2, $3, $4::timestamptz, $5, $6, $7, $8, $9, $10, $11::text::jsonb, $12, $13)",
     [
       crypto.randomUUID(),
       args.type,
       "ours.founding-relay/0.1",
-      occurredAt,
+      tsParam(occurredAt),
       args.actorType,
       args.actorRef,
       args.subjectType,
       args.subjectRef,
       args.authorityRef ?? "STEWARD-RECEIPT",
       args.privacyClass,
-      // Object param: postgres.js serializes jsonb itself.
-      args.payload,
+      jsonParam(args.payload),
       prevDigest,
       digest,
     ],
@@ -71,13 +63,15 @@ export async function resolveCorrectionRequest(args: {
 }): Promise<ResolutionResult> {
   if (!args.actorLabel.trim()) throw new StewardActionError("Actor label is required.");
   return getSql().begin(async (tx: OurSql) => {
-    const rows = await tx.unsafe<{
-      id: string;
-      person_id: string;
-      subject_ordinal: number | null;
-      proposed_display_name: string;
-      state: string;
-    }[]>(
+    const rows = await tx.unsafe<
+      {
+        id: string;
+        person_id: string;
+        subject_ordinal: number | null;
+        proposed_display_name: string;
+        state: string;
+      }[]
+    >(
       "SELECT id, person_id, subject_ordinal, proposed_display_name, state FROM private.correction_request WHERE id = $1 FOR UPDATE",
       [args.requestId],
     );
@@ -133,12 +127,14 @@ export async function resolveWithdrawalRequest(args: {
 }): Promise<ResolutionResult> {
   if (!args.actorLabel.trim()) throw new StewardActionError("Actor label is required.");
   return getSql().begin(async (tx: OurSql) => {
-    const rows = await tx.unsafe<{
-      id: string;
-      person_id: string;
-      subject_ordinal: number | null;
-      state: string;
-    }[]>(
+    const rows = await tx.unsafe<
+      {
+        id: string;
+        person_id: string;
+        subject_ordinal: number | null;
+        state: string;
+      }[]
+    >(
       "SELECT id, person_id, subject_ordinal, state FROM private.withdrawal_request WHERE id = $1 FOR UPDATE",
       [args.requestId],
     );
@@ -204,7 +200,9 @@ export async function voidEntryAfterReview(args: {
       [entry.id],
     );
     // Remove continuation edges that depended on this entry's validity.
-    await tx.unsafe("DELETE FROM ledger.first_continuation WHERE successor_entry_id = $1", [entry.id]);
+    await tx.unsafe("DELETE FROM ledger.first_continuation WHERE successor_entry_id = $1", [
+      entry.id,
+    ]);
     await tx.unsafe(
       "UPDATE private.relay_token_record SET state = 'REVOKED', revoked_at = now(), revoke_reason = 'entry-voided' WHERE predecessor_entry_id = $1 AND state = 'ACTIVE'",
       [entry.id],
@@ -242,10 +240,14 @@ export async function openReviewCase(inputArgs: {
   const sql = getSql();
   const rows = await sql.unsafe<{ id: string }[]>(
     "INSERT INTO private.review_case (kind, subject_ordinal, opened_by_actor, opened_reason) VALUES ($1, $2, $3, $4) RETURNING id",
-    [inputArgs.kind, inputArgs.subjectOrdinal ?? null, inputArgs.openedByActor, inputArgs.openedReason],
+    [
+      inputArgs.kind,
+      inputArgs.subjectOrdinal ?? null,
+      inputArgs.openedByActor,
+      inputArgs.openedReason,
+    ],
   );
   const id = rows[0]?.id;
   if (!id) throw new StewardActionError("Could not open review case.");
   return id;
 }
-

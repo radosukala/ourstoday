@@ -1,4 +1,3 @@
-
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 
@@ -12,7 +11,10 @@ export function jsonOk<T extends object>(body: T, init?: ResponseInit): NextResp
 }
 
 export function jsonError(state: string, message: string, status: number): NextResponse {
-  return NextResponse.json({ status: "ERROR", state, message } satisfies { status: string } & ApiError, { status });
+  return NextResponse.json(
+    { status: "ERROR", state, message } satisfies { status: string } & ApiError,
+    { status },
+  );
 }
 
 /** Neutral response used where revealing existence would enable enumeration. */
@@ -33,4 +35,3 @@ export function randomId(bytes = 32): string {
 export function sha256HexOf(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
-

@@ -1,4 +1,3 @@
-
 /**
  * Better Auth tables, isolated in the PostgreSQL `auth` schema.
  * Field shapes follow the pinned better-auth@1.7.1 models (user, session,
@@ -44,7 +43,10 @@ export const session = authNs.table(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
-  (t) => [index("auth_session_user_idx").on(t.userId), uniqueIndex("auth_session_token_uq").on(t.token)],
+  (t) => [
+    index("auth_session_user_idx").on(t.userId),
+    uniqueIndex("auth_session_token_uq").on(t.token),
+  ],
 );
 
 export const account = authNs.table(
@@ -59,8 +61,14 @@ export const account = authNs.table(
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true, mode: "date" }),
-    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true, mode: "date" }),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     scope: text("scope"),
     password: text("password"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
@@ -97,4 +105,3 @@ export const rateLimit = authNs.table(
   },
   (t) => [uniqueIndex("auth_rate_limit_key_uq").on(t.key)],
 );
-

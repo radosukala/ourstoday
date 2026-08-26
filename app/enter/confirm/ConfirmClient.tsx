@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -52,29 +51,42 @@ export function ConfirmClient() {
       <section className="page-shell ink confirm-hero" aria-labelledby="confirm-title">
         <p className="eyebrow signal-text">ENTRY · STEP 03 OF 03 · EXPLICIT CONFIRMATION</p>
         <h1 id="confirm-title">
-          {phase === "READY" ? "Press continue to finish signing in." : phase === "BUSY" ? "Checking your link…" : "This link cannot be used."}
+          {phase === "READY"
+            ? "Press continue to finish signing in."
+            : phase === "BUSY"
+              ? "Checking your link…"
+              : "This link cannot be used."}
         </h1>
         <p className="large-copy" style={{ color: "var(--paper-quiet)" }}>
-          Nothing has been signed in yet - not by the email and not by opening this page. Signing in happens only when you press CONTINUE.
+          Nothing has been signed in yet - not by the email and not by opening this page. Signing in
+          happens only when you press CONTINUE.
         </p>
-        <button className="action-button inverse" type="button" onClick={continueClicked} disabled={phase !== "READY"}>
+        <button
+          className="action-button inverse"
+          type="button"
+          onClick={continueClicked}
+          disabled={phase !== "READY"}
+        >
           CONTINUE <span aria-hidden="true">→</span>
         </button>
         <div aria-live="polite">
           {(phase === "USED" || phase === "EXPIRED" || phase === "ERROR") && (
-            <p className="form-status" data-state="error">{GENERIC} Request a fresh link from the entry page.</p>
+            <p className="form-status" data-state="error">
+              {GENERIC} Request a fresh link from the entry page.
+            </p>
           )}
           {!hasToken && phase === "READY" && (
             <p className="token-warning" role="note">
-              NO LINK DATA FOUND IN THIS PAGE. OPEN THE FULL LINK FROM YOUR EMAIL (INCLUDING EVERYTHING AFTER THE #).
+              NO LINK DATA FOUND IN THIS PAGE. OPEN THE FULL LINK FROM YOUR EMAIL (INCLUDING
+              EVERYTHING AFTER THE #).
             </p>
           )}
         </div>
         <p className="neutral-note">
-          THIS AUTHENTICATES YOUR EMAIL. IT DOES NOT CREATE A FOUNDING LEDGER ENTRY OR LEGAL MEMBERSHIP. DID NOT REQUEST THIS? CLOSE THIS PAGE AND IGNORE THE EMAIL.
+          THIS AUTHENTICATES YOUR EMAIL. IT DOES NOT CREATE A FOUNDING LEDGER ENTRY OR LEGAL
+          MEMBERSHIP. DID NOT REQUEST THIS? CLOSE THIS PAGE AND IGNORE THE EMAIL.
         </p>
       </section>
     </main>
   );
 }
-

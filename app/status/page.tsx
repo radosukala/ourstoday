@@ -1,4 +1,3 @@
-
 import { Masthead } from "@/components/Masthead";
 import { foundingState } from "@/ledger/state";
 import { getSql } from "@/db/sqltype";
@@ -28,16 +27,27 @@ export default async function StatusPage() {
 
   return (
     <>
-      <a className="skip-link" href="#main">Skip to status</a>
+      <a className="skip-link" href="#main">
+        Skip to status
+      </a>
       <Masthead formationStatus={"STATUS · " + modeLabel} />
       <main id="main">
         <section className="page-shell" aria-labelledby="status-title">
           <p className="eyebrow">SERVICE + LEDGER STATUS</p>
-          <h1 id="status-title" style={{ fontSize: "clamp(34px, 5.5vw, 78px)", letterSpacing: "-0.058em", lineHeight: 0.94 }}>
+          <h1
+            id="status-title"
+            style={{
+              fontSize: "clamp(34px, 5.5vw, 78px)",
+              letterSpacing: "-0.058em",
+              lineHeight: 0.94,
+            }}
+          >
             The current truth.
           </h1>
           <dl className="status-grid" style={{ marginTop: 40 }}>
-            <div className={state.ledgerState === "PAUSED" ? "status-cell mode-paused" : "status-cell"}>
+            <div
+              className={state.ledgerState === "PAUSED" ? "status-cell mode-paused" : "status-cell"}
+            >
               <dt>LEDGER WRITE STATE</dt>
               <dd>{modeLabel}</dd>
             </div>
@@ -51,8 +61,9 @@ export default async function StatusPage() {
             </div>
           </dl>
           <p className="status-note">
-            {STATUS_LINE}. A Founding Ledger entry is not a share, security, token or legal membership.
-            Withdrawn places keep their ordinal forever as tombstones; numbers are never reassigned.
+            {STATUS_LINE}. A Founding Ledger entry is not a share, security, token or legal
+            membership. Withdrawn places keep their ordinal forever as tombstones; numbers are never
+            reassigned.
           </p>
           <p className="status-note">
             ENVIRONMENT WRITE GATE: {state.canAcceptEntries ? "PRESENT" : "ABSENT"} · DATABASE MODE:{" "}
@@ -61,11 +72,16 @@ export default async function StatusPage() {
         </section>
       </main>
       <footer className="site-footer">
-        <div><strong>OURS TODAY</strong><span>26 AUGUST 2026</span></div>
-        <p>THIS PAGE REPORTS THE REAL STATE OF THIS ENVIRONMENT. IT NEVER CLAIMS MEMBERSHIP OR OWNERSHIP.</p>
+        <div>
+          <strong>OURS TODAY</strong>
+          <span>26 AUGUST 2026</span>
+        </div>
+        <p>
+          THIS PAGE REPORTS THE REAL STATE OF THIS ENVIRONMENT. IT NEVER CLAIMS MEMBERSHIP OR
+          OWNERSHIP.
+        </p>
         <a href="/">BACK TO THE INSTRUMENT ↑</a>
       </footer>
     </>
   );
 }
-

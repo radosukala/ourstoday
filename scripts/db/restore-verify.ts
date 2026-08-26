@@ -1,4 +1,3 @@
-
 /**
  * Controlled dump and clean-restore rehearsal:
  *   1. pg_dump the live/local database (custom format)
@@ -39,21 +38,36 @@ interface VerifyResult {
 }
 
 async function verifyRestore(sql: postgres.Sql): Promise<VerifyResult> {
-  const eventsRow = await sql<{ count: string }[]>`SELECT count(*)::text AS count FROM ledger.event`;
-  const entriesRow = await sql<{ count: string }[]>`SELECT count(*)::text AS count FROM ledger.entry`;
-  const distinctRow = await sql<{ count: string }[]>`SELECT count(DISTINCT ordinal)::text AS count FROM ledger.entry`;
-  const idemRow = await sql<{ count: string }[]>`SELECT count(*)::text AS count FROM private.idempotency_record`;
-  const fcRow = await sql<{ count: string }[]>`SELECT count(*)::text AS count FROM ledger.first_continuation`;
+  const eventsRow = await sql<
+    { count: string }[]
+  >`SELECT count(*)::text AS count FROM ledger.event`;
+  const entriesRow = await sql<
+    { count: string }[]
+  >`SELECT count(*)::text AS count FROM ledger.entry`;
+  const distinctRow = await sql<
+    { count: string }[]
+  >`SELECT count(DISTINCT ordinal)::text AS count FROM ledger.entry`;
+  const idemRow = await sql<
+    { count: string }[]
+  >`SELECT count(*)::text AS count FROM private.idempotency_record`;
+  const fcRow = await sql<
+    { count: string }[]
+  >`SELECT count(*)::text AS count FROM ledger.first_continuation`;
 
   // Digest chain must be intact in sequence order after restoration.
-  const rows = await sql<{ seq: string; type: string; payload: unknown; prev_digest: string | null; digest: string }[]>`
+  const rows = await sql<
+    { seq: string; type: string; payload: unknown; prev_digest: string | null; digest: string }[]
+  >`
     SELECT seq::text AS seq, type, payload, prev_digest, digest FROM ledger.event ORDER BY seq ASC`;
   const { createHash } = await import("node:crypto");
   const canonical = (value: unknown): string => JSON.stringify(value);
   let prev: string | null = null;
   let chainOk = true;
   for (const row of rows) {
-    if ((row.prev_digest ?? null) !== prev) { chainOk = false; break; }
+    if ((row.prev_digest ?? null) !== prev) {
+      chainOk = false;
+      break;
+    }
     const material = canonical({
       type: row.type,
       payload: row.payload,
@@ -61,7 +75,10 @@ async function verifyRestore(sql: postgres.Sql): Promise<VerifyResult> {
       prevDigest: row.prev_digest,
     });
     const expected = createHash("sha256").update(material).digest("hex");
-    if (expected !== row.digest) { chainOk = false; break; }
+    if (expected !== row.digest) {
+      chainOk = false;
+      break;
+    }
     prev = row.digest;
   }
 
@@ -86,22 +103,44 @@ async function main() {
     console.log(`restore-verify: dumping ${db} -> ${dumpFile}`);
     execFileSync(
       "pg_dump",
-      ["-h", host.startsWith("/") ? host : host, "-p", port, "-U", user, "-Fc", "-d", db, "-f", dumpFile],
+      [
+        "-h",
+        host.startsWith("/") ? host : host,
+        "-p",
+        port,
+        "-U",
+        user,
+        "-Fc",
+        "-d",
+        db,
+        "-f",
+        dumpFile,
+      ],
       { env: pgEnv(), stdio: "pipe" },
     );
     execFileSync(
       "pg_restore",
       [
-        "-h", host.startsWith("/") ? host : host,
-        "-p", port, "-U", user,
-        "-d", targetDb,
-        "--no-owner", "--role", user,
+        "-h",
+        host.startsWith("/") ? host : host,
+        "-p",
+        port,
+        "-U",
+        user,
+        "-d",
+        targetDb,
+        "--no-owner",
+        "--role",
+        user,
         dumpFile,
       ],
       { env: pgEnv(), stdio: "pipe" },
     );
 
-    const restored = postgres(new URL(directUrl()).origin.replace(/\/\/?$/, "") + `/${targetDb}`.replace(/^([^/])/, "$1"), { max: 1, prepare: false });
+    const restored = postgres(
+      new URL(directUrl()).origin.replace(/\/\/?$/, "") + `/${targetDb}`.replace(/^([^/])/, "$1"),
+      { max: 1, prepare: false },
+    );
     let result: VerifyResult;
     try {
       result = await verifyRestore(restored);
@@ -119,7 +158,10 @@ async function main() {
     if (!ok) failed = true;
 
     // Also prove the append-only trigger survives restoration.
-    const probe = postgres(directUrl().replace(/\/[^/]*$/, `/${targetDb}`), { max: 1, prepare: false });
+    const probe = postgres(directUrl().replace(/\/[^/]*$/, `/${targetDb}`), {
+      max: 1,
+      prepare: false,
+    });
     try {
       await probe`UPDATE ledger.event SET type = 'tampered' WHERE seq = (SELECT min(seq) FROM ledger.event)`;
       console.log("restore-verify: FAIL - event UPDATE was permitted after restore");
@@ -140,4 +182,3 @@ async function main() {
 }
 
 void main();
-

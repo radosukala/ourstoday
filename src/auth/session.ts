@@ -1,4 +1,3 @@
-
 import { getAuth } from "./auth";
 
 /** Fully validated server session - a cookie existing is NOT authorization. */

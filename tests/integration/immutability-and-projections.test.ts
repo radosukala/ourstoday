@@ -1,4 +1,3 @@
-
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { setupTestDatabase } from "./helpers";
 
@@ -21,17 +20,15 @@ describe("append-only canonical events", () => {
       "INSERT INTO ledger.event (id, type, schema_version, actor_type, subject_type, subject_ref, privacy_class, payload, digest) VALUES ($1, 'ledger.entry.sealed', 'ours.founding-relay/0.1', 'SYSTEM', 'test', 't', 'PUBLIC', '{}', 'd')",
       [crypto.randomUUID()],
     );
-    const seqRow = await rawQuery<{ seq: number }[]>(
-      "SELECT min(seq)::int AS seq FROM ledger.event",
-    );
+    const seqRow = await rawQuery<{ seq: number }>("SELECT min(seq)::int AS seq FROM ledger.event");
     const seq = seqRow[0]?.seq as number;
 
     await expect(
       rawQuery("UPDATE ledger.event SET type = 'tampered' WHERE seq = $1", [seq]),
     ).rejects.toThrow(/append-only/i);
-    await expect(
-      rawQuery("DELETE FROM ledger.event WHERE seq = $1", [seq]),
-    ).rejects.toThrow(/append-only/i);
+    await expect(rawQuery("DELETE FROM ledger.event WHERE seq = $1", [seq])).rejects.toThrow(
+      /append-only/i,
+    );
   });
 });
 
@@ -39,7 +36,7 @@ describe("safe public projections", () => {
   it("expose only allowlisted columns and never private data", async () => {
     const { rawQuery } = await import("@/db/sqltype");
 
-    const columns = await rawQuery<{ column_name: string }[]>(
+    const columns = await rawQuery<{ column_name: string }>(
       "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'founding_ledger' ORDER BY ordinal_position",
     );
     const names = columns.map((c) => c.column_name).sort();
@@ -59,11 +56,20 @@ describe("safe public projections", () => {
 
     // Word-safe private fragments (bare "ip" would false-positive on
     // "legal_membership_status").
-    for (const forbidden of ["email", "auth_user_id", "person_id", "token", "session", "addr", "_ip_", "jti"]) {
+    for (const forbidden of [
+      "email",
+      "auth_user_id",
+      "person_id",
+      "token",
+      "session",
+      "addr",
+      "_ip_",
+      "jti",
+    ]) {
       expect(names.some((n) => n.includes(forbidden))).toBe(false);
     }
 
-    const statusColumns = await rawQuery<{ column_name: string }[]>(
+    const statusColumns = await rawQuery<{ column_name: string }>(
       "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'system_status'",
     );
     const statusNames = statusColumns.map((c) => c.column_name);
@@ -96,7 +102,7 @@ describe("safe public projections", () => {
     });
 
     // Steward-approved withdrawal resolution (same transaction semantics).
-    const reqRows = await rawQuery<{ id: string }[]>(
+    const reqRows = await rawQuery<{ id: string }>(
       "INSERT INTO private.withdrawal_request (person_id, subject_ordinal, reason_code) VALUES ((SELECT id FROM private.person WHERE auth_user_id = $1), $2, 'PERSONAL_CHOICE') RETURNING id",
       [person.authUserId, sealed.ordinal],
     );
@@ -107,7 +113,7 @@ describe("safe public projections", () => {
       approve: true,
     });
 
-    const view = await rawQuery<{ display_name: string | null; public_status: string }[]>(
+    const view = await rawQuery<{ display_name: string | null; public_status: string }>(
       "SELECT display_name, public_status FROM public.founding_ledger WHERE ordinal = $1",
       [sealed.ordinal],
     );
@@ -131,7 +137,7 @@ describe("safe public projections", () => {
     expect(nextSeal.ordinal).toBeGreaterThan(sealed.ordinal);
 
     // Withdrawal receipt event exists in canonical history.
-    const events = await rawQuery<{ count: string }[]>(
+    const events = await rawQuery<{ count: string }>(
       "SELECT count(*)::text AS count FROM ledger.event WHERE type = 'ledger.entry.withdrawn' AND payload->>'ordinal' = $1",
       [String(sealed.ordinal)],
     );
@@ -160,7 +166,7 @@ describe("safe public projections", () => {
       idempotencyKey: "corr-key-" + Math.random().toString(36).slice(2),
     });
 
-    const req = await rawQuery<{ id: string }[]>(
+    const req = await rawQuery<{ id: string }>(
       "INSERT INTO private.correction_request (person_id, subject_ordinal, proposed_display_name) VALUES ((SELECT id FROM private.person WHERE auth_user_id = $1), $2, 'Correct Name') RETURNING id",
       [person.authUserId, sealed.ordinal],
     );
@@ -172,13 +178,13 @@ describe("safe public projections", () => {
     });
     expect(result.requestState).toBe("APPROVED");
 
-    const view = await rawQuery<{ display_name: string | null }[]>(
+    const view = await rawQuery<{ display_name: string | null }>(
       "SELECT display_name FROM public.founding_ledger WHERE ordinal = $1",
       [sealed.ordinal],
     );
     expect(view[0]?.display_name).toBe("Correct Name");
 
-    const events = await rawQuery<{ payload: { previousName?: string; newName?: string } }[]>(
+    const events = await rawQuery<{ payload: { previousName?: string; newName?: string } }>(
       "SELECT payload FROM ledger.event WHERE type = 'ledger.entry.corrected' ORDER BY seq DESC LIMIT 1",
     );
     expect(events[0]?.payload.previousName).toBe("Typo Namee");
@@ -221,7 +227,7 @@ describe("safe public projections", () => {
       reason: "Confirmed integrity violation.",
     });
 
-    const view = await rawQuery<{ display_name: string | null; public_status: string }[]>(
+    const view = await rawQuery<{ display_name: string | null; public_status: string }>(
       "SELECT display_name, public_status FROM public.founding_ledger WHERE ordinal = $1",
       [sealed.ordinal],
     );
@@ -230,17 +236,16 @@ describe("safe public projections", () => {
 
     // The person may not seal again while voided rows exist is NOT required -
     // but one-active-per-person still holds against their non-voided rows.
-    const activeRows = await rawQuery<{ count: string }[]>(
+    const activeRows = await rawQuery<{ count: string }>(
       "SELECT count(*)::text AS count FROM ledger.entry WHERE person_id = (SELECT id FROM private.person WHERE auth_user_id = $1) AND lifecycle <> 'VOIDED'",
       [person.authUserId],
     );
     expect(Number(activeRows[0]?.count ?? "0")).toBe(0);
 
-    const voidEvents = await rawQuery<{ count: string }[]>(
+    const voidEvents = await rawQuery<{ count: string }>(
       "SELECT count(*)::text AS count FROM ledger.event WHERE type = 'ledger.entry.voided' AND payload->>'ordinal' = $1",
       [String(sealed.ordinal)],
     );
     expect(Number(voidEvents[0]?.count ?? "0")).toBe(1);
   });
 });
-

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -10,7 +9,8 @@ interface ReceiptPayload {
   message?: string;
   ordinalLabel?: string;
   displayName?: string;
-  firstContinuationOfOrdinal?: string | null;
+  predecessorOrdinal?: string | null;
+  isFirstContinuation?: boolean;
   relayUrl?: string | null;
   receipt?: {
     headline: string;
@@ -26,7 +26,13 @@ function makeKey(): string {
   return Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function SealForm({ versions, alreadySealed }: { versions: DocumentVersions; alreadySealed: boolean }) {
+export function SealForm({
+  versions,
+  alreadySealed,
+}: {
+  versions: DocumentVersions;
+  alreadySealed: boolean;
+}) {
   const [name, setName] = useState("");
   const [accept1, setAccept1] = useState(false);
   const [accept2, setAccept2] = useState(false);
@@ -39,7 +45,10 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
     event.preventDefault();
     setErrorState(null);
     if (!name.trim() || !accept1 || !accept2) {
-      setErrorState({ state: "INCOMPLETE", message: "ADD A PUBLIC NAME AND ACCEPT BOTH ACKNOWLEDGMENTS." });
+      setErrorState({
+        state: "INCOMPLETE",
+        message: "ADD A PUBLIC NAME AND ACCEPT BOTH ACKNOWLEDGMENTS.",
+      });
       return;
     }
     setBusy(true);
@@ -55,13 +64,20 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
       });
       const payload = (await res.json()) as ReceiptPayload;
       if (!res.ok || payload.status !== "OK") {
-        setErrorState({ state: payload.state ?? "ERROR", message: payload.message ?? "The seal did not commit." });
+        setErrorState({
+          state: payload.state ?? "ERROR",
+          message: payload.message ?? "The seal did not commit.",
+        });
         setResult(null);
       } else {
         setResult(payload);
       }
     } catch {
-      setErrorState({ state: "NETWORK", message: "THE RESULT IS UNKNOWN. WAIT A MOMENT BEFORE RETRYING; RETRYING WITH THE SAME INPUT RETURNS THE SAME ENTRY." });
+      setErrorState({
+        state: "NETWORK",
+        message:
+          "THE RESULT IS UNKNOWN. WAIT A MOMENT BEFORE RETRYING; RETRYING WITH THE SAME INPUT RETURNS THE SAME ENTRY.",
+      });
     } finally {
       setBusy(false);
     }
@@ -82,7 +98,13 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
       <div className="receipt-block">
         <div className="receipt-status">ALREADY SEALED</div>
         <h3>This account already holds an entry.</h3>
-        <p className="neutral-note">Open <a href="/me" style={{ color: "var(--paper)" }}>/me</a> to see it, export your records or request changes.</p>
+        <p className="neutral-note">
+          Open{" "}
+          <a href="/me" style={{ color: "var(--paper)" }}>
+            /me
+          </a>{" "}
+          to see it, export your records or request changes.
+        </p>
       </div>
     );
   }
@@ -94,12 +116,29 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
         <div className="receipt-status">SEALED · COMMITTED</div>
         <h3>{result.receipt?.headline ?? "You are in the Founding Ledger."}</h3>
         <dl>
-          <div><dt>PUBLIC NUMBER</dt><dd>{"#" + padded + " — assigned at commit, not before."}</dd></div>
-          {result.firstContinuationOfOrdinal ? (
-            <div><dt>LINE CONTINUED</dt><dd>{"Entered through #" + result.firstContinuationOfOrdinal}</dd></div>
+          <div>
+            <dt>PUBLIC NUMBER</dt>
+            <dd>{"#" + padded + " — assigned at commit, not before."}</dd>
+          </div>
+          {result.predecessorOrdinal ? (
+            <div>
+              <dt>ARRIVED THROUGH</dt>
+              <dd>
+                {"#" + result.predecessorOrdinal}
+                {result.isFirstContinuation
+                  ? " — you are their First Continuation."
+                  : " — their line was already continued; your place is unaffected."}
+              </dd>
+            </div>
           ) : null}
-          <div><dt>PUBLIC NAME</dt><dd>{result.displayName}</dd></div>
-          <div><dt>LEGAL MEMBERSHIP</dt><dd>NOT YET ISSUED — THIS IS NOT LEGAL MEMBERSHIP.</dd></div>
+          <div>
+            <dt>PUBLIC NAME</dt>
+            <dd>{result.displayName}</dd>
+          </div>
+          <div>
+            <dt>LEGAL MEMBERSHIP</dt>
+            <dd>NOT YET ISSUED — THIS IS NOT LEGAL MEMBERSHIP.</dd>
+          </div>
         </dl>
         {result.relayUrl ? (
           <>
@@ -108,10 +147,17 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
               CARRY IT IF AND WHERE YOU CHOOSE. OURS NEVER POSTS FOR YOU.
             </p>
             <dl>
-              <div><dt>RELAY URL</dt><dd>{result.relayUrl}</dd></div>
+              <div>
+                <dt>RELAY URL</dt>
+                <dd>{result.relayUrl}</dd>
+              </div>
             </dl>
             <div className="receipt-actions">
-              <button className="small-button" type="button" onClick={() => copy(result.relayUrl ?? "", "relay")}>
+              <button
+                className="small-button"
+                type="button"
+                onClick={() => copy(result.relayUrl ?? "", "relay")}
+              >
                 {copied === "relay" ? "COPIED" : "COPY RELAY URL"}
               </button>
               <button
@@ -119,7 +165,9 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
                 type="button"
                 onClick={() =>
                   copy(
-                    (result.receipt?.shareCopySuggestion ?? "") + "\n\nContinue the line from me: " + result.relayUrl,
+                    (result.receipt?.shareCopySuggestion ?? "") +
+                      "\n\nContinue the line from me: " +
+                      result.relayUrl,
                     "share",
                   )
                 }
@@ -130,8 +178,12 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
           </>
         ) : null}
         <div className="receipt-actions" style={{ marginTop: 18 }}>
-          <a className="small-button" href={"/e/" + String(parseInt(padded || "0", 10))}>VIEW PUBLIC RECEIPT</a>
-          <a className="small-button" href="/me">GO TO YOUR ACCOUNT</a>
+          <a className="small-button" href={"/e/" + String(parseInt(padded || "0", 10))}>
+            VIEW PUBLIC RECEIPT
+          </a>
+          <a className="small-button" href="/me">
+            GO TO YOUR ACCOUNT
+          </a>
         </div>
       </article>
     );
@@ -141,7 +193,9 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
     <form onSubmit={submit} noValidate>
       {!result ? (
         <>
-          <label className="field-label" htmlFor="public-name">PUBLIC NAME OR PSEUDONYM</label>
+          <label className="field-label" htmlFor="public-name">
+            PUBLIC NAME OR PSEUDONYM
+          </label>
           <input
             id="public-name"
             name="displayName"
@@ -159,18 +213,38 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
           </p>
 
           <label className="check-row">
-            <input type="checkbox" checked={accept1} onChange={(e) => setAccept1(e.target.checked)} />
-            <span>I affirm the founding declaration: the network is ours; everything else can be built. I accept the listed document versions.</span>
+            <input
+              type="checkbox"
+              checked={accept1}
+              onChange={(e) => setAccept1(e.target.checked)}
+            />
+            <span>
+              I affirm the founding declaration: the network is ours; everything else can be built.
+              I accept the listed document versions.
+            </span>
           </label>
           <label className="check-row">
-            <input type="checkbox" checked={accept2} onChange={(e) => setAccept2(e.target.checked)} />
-            <span>I understand this creates one Founding Ledger place—not legal membership, not ownership, not a share or token—and that my public number is assigned only when this seals.</span>
+            <input
+              type="checkbox"
+              checked={accept2}
+              onChange={(e) => setAccept2(e.target.checked)}
+            />
+            <span>
+              I understand this creates one Founding Ledger place—not legal membership, not
+              ownership, not a share or token—and that my public number is assigned only when this
+              seals.
+            </span>
           </label>
 
           <button className="action-button inverse" type="submit" disabled={busy}>
             {busy ? "SEALING…" : "SEAL MY ENTRY"} <span aria-hidden="true">→</span>
           </button>
-          <p className="form-status" role="status" aria-live="polite" data-state={errorState ? "error" : undefined}>
+          <p
+            className="form-status"
+            role="status"
+            aria-live="polite"
+            data-state={errorState ? "error" : undefined}
+          >
             {errorState?.message}
           </p>
         </>
@@ -178,4 +252,3 @@ export function SealForm({ versions, alreadySealed }: { versions: DocumentVersio
     </form>
   );
 }
-

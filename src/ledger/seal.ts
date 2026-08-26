@@ -1,7 +1,5 @@
-
-import { createHash } from "node:crypto";
 import { config } from "@/config";
-import { getSql, type OurSql } from "@/db/sqltype";
+import { getSql, jsonParam, toDate, tsParam, type DbTimestamp, type OurSql } from "@/db/sqltype";
 import type { DocumentVersions } from "@/legal/documents";
 import { signRelayToken } from "@/security/relay";
 import { sha256Hex } from "@/security/digest";
@@ -13,7 +11,7 @@ import {
   SelfReferralBlockedError,
   StaleConsentError,
 } from "./errors";
-import { newEventId } from "./events";
+import { digestEvent, newEventId } from "./events";
 
 /**
  * The canonical entry seal. ONE PostgreSQL transaction performs every effect:
@@ -39,7 +37,14 @@ export interface SealResult {
   displayName: string;
   /** Raw relay token for THIS entrant. Returned exactly once, never stored raw. */
   relayToken: string;
-  firstContinuationOfOrdinal?: number;
+  /** The predecessor's ordinal when this entry arrived through a relay. */
+  predecessorOrdinal?: number;
+  /**
+   * True when this entry won the race to be that predecessor's First
+   * Continuation. Separate from predecessorOrdinal: arriving through a relay
+   * is lineage, winning the race is an additional, exclusive fact.
+   */
+  isFirstContinuation: boolean;
   receipt: SealReceipt;
 }
 
@@ -53,24 +58,26 @@ export interface SealReceipt {
 /** Normalize once here so validation, digest and storage agree byte-for-byte. */
 export function normalizeDisplayName(raw: string): string {
   // Strip control/format characters, collapse whitespace. No other rewriting.
-  return raw.replace(/[\p{Cc}\p{Cf}]/gu, "").replace(/\s+/g, " ").trim();
+  return raw
+    .replace(/[\p{Cc}\p{Cf}]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 interface EntryRow {
   id: string;
   ordinal: number;
   display_name: string;
-  seal_ts: Date;
+  seal_ts: DbTimestamp;
   predecessor_entry_id: string | null;
 }
 
-function buildReceipt(ordinal: number, firstContinuationOfOrdinal?: number): SealReceipt {
+function buildReceipt(ordinal: number, isFirstContinuation: boolean): SealReceipt {
   const padded = String(ordinal).padStart(6, "0");
   return {
-    headline:
-      firstContinuationOfOrdinal !== undefined
-        ? "The line continued through you."
-        : "You are in the Founding Ledger.",
+    headline: isFirstContinuation
+      ? "The line continued through you."
+      : "You are in the Founding Ledger.",
     lines: [
       ["PUBLIC NUMBER", "#".concat(padded, " - assigned when your verified entry was sealed.")],
       ["WHAT THIS IS", "A chronological Founding Ledger place. Not a share, security or token."],
@@ -78,8 +85,10 @@ function buildReceipt(ordinal: number, firstContinuationOfOrdinal?: number): Sea
       ["YOUR RELAY", "Issued after commit. Carry it if and where you choose."],
     ],
     legalStatus: "OWNERSHIP: COMMITTED \u00b7 LEGAL MEMBERSHIP: NOT YET ISSUED",
-    shareCopySuggestion:
-      "I entered the Founding Ledger of OURS as #".concat(padded, ".\n\nThe network is ours. Everything else can be built."),
+    shareCopySuggestion: "I entered the Founding Ledger of OURS as #".concat(
+      padded,
+      ".\n\nThe network is ours. Everything else can be built.",
+    ),
   };
 }
 
@@ -100,7 +109,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     if (!cfg.allowCanonicalWrites || mode !== "OPEN") throw new LedgerClosedError(mode);
 
     // ---- Gate 2: person ------------------------------------------------------
-    const person = await tx.unsafe<{ id: string; email_verified_at: Date | null }[]>(
+    const person = await tx.unsafe<{ id: string; email_verified_at: DbTimestamp | null }[]>(
       "SELECT id, email_verified_at FROM private.person WHERE auth_user_id = $1",
       [input.authUserId],
     );
@@ -110,12 +119,14 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     }
 
     // ---- Gate 3: consent versions must match live system state ---------------
-    const versionsRow = await tx.unsafe<{
-      declaration_version: string;
-      protocol_version: string;
-      legal_status_version: string;
-      privacy_version: string;
-    }[]>(
+    const versionsRow = await tx.unsafe<
+      {
+        declaration_version: string;
+        protocol_version: string;
+        legal_status_version: string;
+        privacy_version: string;
+      }[]
+    >(
       "SELECT declaration_version, protocol_version, legal_status_version, privacy_version FROM ledger.system_state WHERE id = 1",
     );
     const v = versionsRow[0];
@@ -144,11 +155,13 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     );
 
     if (!claimed[0]) {
-      const existing = await tx.unsafe<{
-        request_digest: string;
-        status: string;
-        result_snapshot: Record<string, unknown> | null;
-      }[]>(
+      const existing = await tx.unsafe<
+        {
+          request_digest: string;
+          status: string;
+          result_snapshot: Record<string, unknown> | null;
+        }[]
+      >(
         "SELECT request_digest, status, result_snapshot FROM private.idempotency_record WHERE person_id = $1 AND operation = 'entry.seal' AND key = $2",
         [person[0].id, input.idempotencyKey],
       );
@@ -159,7 +172,8 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
           entryId: string;
           sealTs: string;
           displayName: string;
-          firstContinuationOfOrdinal?: number;
+          predecessorOrdinal?: number;
+          isFirstContinuation?: boolean;
         };
         // Same key + same input returns the SAME result. The original relay
         // token is never replayed; a fresh one can be minted separately.
@@ -169,11 +183,12 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
           entryId: snap.entryId,
           sealTs: new Date(snap.sealTs),
           displayName: snap.displayName,
-          ...(snap.firstContinuationOfOrdinal !== undefined
-            ? { firstContinuationOfOrdinal: snap.firstContinuationOfOrdinal }
+          ...(snap.predecessorOrdinal !== undefined
+            ? { predecessorOrdinal: snap.predecessorOrdinal }
             : {}),
+          isFirstContinuation: snap.isFirstContinuation === true,
           relayToken: "",
-          receipt: buildReceipt(snap.ordinal, snap.firstContinuationOfOrdinal),
+          receipt: buildReceipt(snap.ordinal, snap.isFirstContinuation === true),
         };
       }
       throw new Error("IDEMPOTENCY_PENDING");
@@ -221,9 +236,10 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     );
     if (!counter[0]) throw new Error("ORDINAL_COUNTER_MISSING");
     const ordinal = counter[0].next_ordinal;
-    await tx.unsafe("UPDATE ledger.ordinal_counter SET next_ordinal = $1, updated_at = now() WHERE id = 1", [
-      ordinal + 1,
-    ]);
+    await tx.unsafe(
+      "UPDATE ledger.ordinal_counter SET next_ordinal = $1, updated_at = now() WHERE id = 1",
+      [ordinal + 1],
+    );
 
     // ---- Insert the canonical entry --------------------------------------------
     const inserted = await tx.unsafe<EntryRow[]>(
@@ -262,20 +278,22 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     }): Promise<void> {
       const prevDigest = lastDigestRow[0]?.digest ?? null;
       const occurredAt = new Date();
-      const material = JSON.stringify({
+      // canonicalJson, not JSON.stringify: PostgreSQL jsonb does not preserve
+      // key insertion order, so an order-dependent digest cannot be recomputed
+      // from the stored row and the integrity chain becomes unverifiable.
+      const digest = digestEvent({
         type: args.type,
         payload: args.payload,
-        occurredAt: occurredAt.toISOString(),
+        occurredAt,
         prevDigest,
       });
-      const digest = createHash("sha256").update(material).digest("hex");
       await tx.unsafe(
-        "INSERT INTO ledger.event (id, type, schema_version, occurred_at, actor_type, actor_ref, subject_type, subject_ref, authority_ref, privacy_class, idempotency_key, payload, prev_digest, digest) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+        "INSERT INTO ledger.event (id, type, schema_version, occurred_at, actor_type, actor_ref, subject_type, subject_ref, authority_ref, privacy_class, idempotency_key, payload, prev_digest, digest) VALUES ($1, $2, $3, $4::timestamptz, $5, $6, $7, $8, $9, $10, $11, $12::text::jsonb, $13, $14)",
         [
           args.id,
           args.type,
           "ours.founding-relay/0.1",
-          occurredAt,
+          tsParam(occurredAt),
           args.actorType,
           args.actorRef ?? null,
           args.subjectType,
@@ -283,8 +301,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
           args.authorityRef ?? null,
           args.privacyClass,
           args.idempotencyKey ?? null,
-          // Object param: postgres.js serializes jsonb itself.
-          args.payload,
+          jsonParam(args.payload),
           prevDigest,
           digest,
         ],
@@ -314,7 +331,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     });
 
     // ---- Arrival + atomic First Continuation race -------------------------------
-    let firstContinuationOfOrdinal: number | undefined;
+    let isFirstContinuation = false;
     if (input.predecessor && predecessorOrdinal !== undefined) {
       await tx.unsafe(
         "INSERT INTO ledger.relay_arrival (successor_entry_id, predecessor_entry_id, relay_token_record_id) VALUES ($1, $2, $3)",
@@ -325,7 +342,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
         [input.predecessor.entryId, entry.id],
       );
       const won = Boolean(wonFc[0]);
-      if (won) firstContinuationOfOrdinal = ordinal;
+      isFirstContinuation = won;
       await appendEvent({
         id: newEventId(),
         type: won ? "relay.first_continuation.recorded" : "relay.arrival.recorded",
@@ -366,27 +383,26 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     const snapshot = {
       ordinal: entry.ordinal,
       entryId: entry.id,
-      sealTs: entry.seal_ts.toISOString(),
+      sealTs: toDate(entry.seal_ts).toISOString(),
       displayName: entry.display_name,
-      ...(firstContinuationOfOrdinal !== undefined ? { firstContinuationOfOrdinal } : {}),
+      ...(predecessorOrdinal !== undefined ? { predecessorOrdinal } : {}),
+      isFirstContinuation,
     };
     await tx.unsafe(
-      // postgres.js serializes object params to jsonb itself; passing the
-      // pre-stringified value would double-encode into a jsonb string scalar.
-      "UPDATE private.idempotency_record SET status = 'COMMITTED', result_snapshot = $1 WHERE operation = 'entry.seal' AND person_id = $2 AND key = $3",
-      [snapshot, person[0].id, input.idempotencyKey],
+      "UPDATE private.idempotency_record SET status = 'COMMITTED', result_snapshot = $1::text::jsonb WHERE operation = 'entry.seal' AND person_id = $2 AND key = $3",
+      [jsonParam(snapshot), person[0].id, input.idempotencyKey],
     );
 
     return {
       state: "SEALED",
       ordinal: entry.ordinal,
       entryId: entry.id,
-      sealTs: entry.seal_ts,
+      sealTs: toDate(entry.seal_ts),
       displayName: entry.display_name,
-      ...(firstContinuationOfOrdinal !== undefined ? { firstContinuationOfOrdinal } : {}),
+      ...(predecessorOrdinal !== undefined ? { predecessorOrdinal } : {}),
+      isFirstContinuation,
       relayToken: signed.token,
-      receipt: buildReceipt(entry.ordinal, firstContinuationOfOrdinal),
+      receipt: buildReceipt(entry.ordinal, isFirstContinuation),
     };
   });
 }
-

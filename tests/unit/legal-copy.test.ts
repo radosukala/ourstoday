@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from "vitest";
 import {
   assertNoForbiddenClaims,
@@ -25,15 +24,18 @@ describe("institutional copy", () => {
 
   it("forbidden live claims are caught by the scanner", () => {
     expect(assertNoForbiddenClaims("you are an owner now")).toEqual(["you are an owner"]);
-    expect(assertNoForbiddenClaims("Your number is reserved for you.")).toContain("your number is reserved");
+    expect(assertNoForbiddenClaims("Your number is reserved for you.")).toContain(
+      "your number is reserved",
+    );
     expect(assertNoForbiddenClaims("Nothing is reserved; nothing is sold.")).toEqual([]);
   });
 
   it("receipts always carry the legal status line", () => {
     const receipt = buildReceiptShape(12);
-    expect(receipt.legalStatus).toBe("OWNERSHIP: COMMITTED \u00b7 LEGAL MEMBERSHIP: NOT YET ISSUED");
+    expect(receipt.legalStatus).toBe(
+      "OWNERSHIP: COMMITTED \u00b7 LEGAL MEMBERSHIP: NOT YET ISSUED",
+    );
     expect(receipt.shareCopySuggestion).toContain("#000012");
     expect(receipt.shareCopySuggestion).not.toMatch(/owner|member/i);
   });
 });
-

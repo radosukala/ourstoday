@@ -1,4 +1,3 @@
-
 /**
  * Canonical Founding Ledger records.
  *
@@ -80,7 +79,9 @@ export const event = ledgerNs.table(
     id: uuid("id").notNull(),
     type: text("type").notNull(),
     schemaVersion: text("schema_version").notNull(),
-    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     actorType: text("actor_type").notNull(),
     actorRef: text("actor_ref"),
     subjectType: text("subject_type").notNull(),
@@ -117,17 +118,13 @@ export const relayArrival = ledgerNs.table(
  * First Continuation race: INSERT ... ON CONFLICT DO NOTHING RETURNING decides
  * exactly one winner among concurrent successors.
  */
-export const firstContinuation = ledgerNs.table(
-  "first_continuation",
-  {
-    predecessorEntryId: uuid("predecessor_entry_id")
-      .primaryKey()
-      .references(() => entry.id),
-    successorEntryId: uuid("successor_entry_id")
-      .notNull()
-      .unique()
-      .references(() => entry.id),
-    recordedAt: timestamp("recorded_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
-  },
-);
-
+export const firstContinuation = ledgerNs.table("first_continuation", {
+  predecessorEntryId: uuid("predecessor_entry_id")
+    .primaryKey()
+    .references(() => entry.id),
+  successorEntryId: uuid("successor_entry_id")
+    .notNull()
+    .unique()
+    .references(() => entry.id),
+  recordedAt: timestamp("recorded_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+});
