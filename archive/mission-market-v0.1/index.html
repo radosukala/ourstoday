@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'">
+  <title>OURS TODAY · Mission Market</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141414'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='17' fill='%23fff' text-anchor='middle'%3EO%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">OURS<small>OURS TODAY · MISSION MARKET</small></div>
+    <span class="concept-chip" title="All counts, momentum values and costs shown are fictional design data.">CONCEPT DATA</span>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <span class="kicker" style="display:inline-flex;align-items:center;gap:6px;"><span class="live-dot" aria-hidden="true"></span><span id="today-date"></span></span>
+      <button class="btn" id="theme-btn" type="button" aria-label="Toggle color theme">THEME: AUTO</button>
+      <a class="btn" href="#/receipts" id="receipts-link">MY RECORDS (<span id="receipt-count">0</span>)</a>
+      <a class="btn btn-primary" href="#/">MISSION MARKET</a>
+    </div>
+  </header>
+
+  <main>
+    <noscript><p>This page needs JavaScript. Read the founding direction instead: <a href="docs/OURS.md">docs/OURS.md</a>.</p></noscript>
+
+    <!-- ============ MARKET VIEW ============ -->
+    <section class="view" id="view-market">
+      <div class="edition" id="edition-strip" aria-label="Today's edition"></div>
+
+      <div class="market-heading">
+        <h1 class="market-question">WHAT ARE WE UNITING AROUND?</h1>
+        <p class="legend">AREA = VERIFIED COMMITMENTS · COLOR + NUMBER = 7-DAY MOMENTUM<br>CLICK A CELL TO SEE ITS NEXT UNLOCK · ▲ RISING ▼ FALLING ◆ FLAT</p>
+      </div>
+
+      <div class="grid" id="cell-grid" aria-label="Mission cells"></div>
+
+      <section class="detail" aria-live="polite" id="detail-root"><!-- rendered --></section>
+      <div id="action-panel-root"></div>
+
+      <section class="section" id="build-log-section">
+        <h3>BUILD LOG <span class="concept-chip">CONCEPT DATA</span></h3>
+        <p class="empty-note" style="margin-top:-6px;">Shipping code is evidence of effort, not evidence that a cell deserves to exist. Every entry names its hypothesis, owner, cost and failure.</p>
+        <div id="build-log"></div>
+      </section>
+
+      <section class="section" id="ledger-section">
+        <h3>COST TRUTH — MONTHLY LEDGER SNAPSHOT <span class="concept-chip">CONCEPT DATA</span></h3>
+        <div class="table-wrap"><table class="data" id="ledger-table"></table></div>
+      </section>
+
+      <section class="section" id="switch-section" hidden>
+        <h3>SWITCH EVENT <span class="concept-chip">CONCEPT DATA</span></h3>
+        <div id="switch-event"></div>
+      </section>
+    </section>
+
+    <!-- ============ RECEIPTS VIEW ============ -->
+    <section class="view" id="view-receipts" hidden>
+      <h1 style="margin:26px 0 4px;font-size:clamp(20px,3vw,28px);">MY RECORDS</h1>
+      <p style="margin:0 0 18px;color:var(--muted-foreground);max-width:70ch;">
+        Everything below lives only in this browser. Nothing was sent anywhere — this page makes zero network requests.
+        Your records are yours: export them at any time, delete them at any time. A social reaction never satisfies a gate.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;">
+        <button class="btn btn-primary" type="button" id="export-btn">EXPORT JSON</button>
+        <button class="btn btn-danger" type="button" id="wipe-btn">DELETE ALL LOCAL DATA</button>
+      </div>
+
+      <section class="section">
+        <h3>PARTICIPATION RECEIPTS</h3>
+        <div class="table-wrap"><table class="data" id="receipts-table"></table></div>
+      </section>
+
+      <section class="section">
+        <h3>TOGETHER PLEDGES</h3>
+        <div class="table-wrap"><table class="data" id="pledges-table"></table></div>
+      </section>
+
+      <section class="section">
+        <h3>COHORTS I CAPTAIN</h3>
+        <div class="table-wrap"><table class="data" id="cohorts-table"></table></div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <nav aria-label="Documents">
+      <strong style="letter-spacing:.06em;">DOCUMENTS</strong>
+      <a href="docs/OURS.md">Founding direction v0.1 (OURS.md)</a>
+      <a href="docs/mission-market.html">Design proposal (mission-market.html)</a>
+    </nav>
+    <p style="max-width:52ch;margin:0;">
+      Committed to member ownership — legal membership follows the pilot.
+      Actions must produce use, evidence, or accountability. Likes don't move cells.
+      Every number on this page is concept data until verified evidence replaces it.
+    </p>
+  </footer>
+
+  <script src="assets/data.js"></script>
+  <script src="assets/store.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
