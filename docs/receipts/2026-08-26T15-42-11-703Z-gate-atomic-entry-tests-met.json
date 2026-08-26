@@ -1,0 +1,10 @@
+{
+  "receipt": "ours.steward-receipt/v1",
+  "kind": "gate-atomic-entry-tests-met",
+  "at": "2026-08-26T15:42:11.703Z",
+  "gate": "atomic-entry-tests",
+  "state": "MET",
+  "actor": "founder-steward",
+  "reason": "concurrency, idempotency and First Continuation suites pass on real PostgreSQL",
+  "evidenceUri": "/source/receipts/2026-08-26-build-receipt-0.1.md"
+}
