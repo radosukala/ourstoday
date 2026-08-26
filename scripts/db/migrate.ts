@@ -4,8 +4,9 @@
  */
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import postgres from "postgres";
+import type postgres from "postgres";
 import { requireDatabaseUrl } from "../env";
+import { connect } from "./dbadmin";
 
 const MIGRATIONS_DIR = path.join(process.cwd(), "src", "db", "migrations");
 
@@ -39,7 +40,7 @@ export async function migrate(sql: postgres.Sql): Promise<string[]> {
 
 async function main() {
   const url = requireDatabaseUrl("db:migrate");
-  const sql = postgres(url, { max: 1 });
+  const sql = connect(url, { max: 1 });
   try {
     const ran = await migrate(sql);
     console.info(`migrate: applied ${ran.length} migration(s)`);

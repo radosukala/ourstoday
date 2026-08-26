@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { config } from "@/config";
+import { normalizeConnectionUrl } from "@/db/connection-url";
 import * as authSchema from "@/db/schema/auth";
 import * as ledgerSchema from "@/db/schema/ledger";
 import * as privateSchema from "@/db/schema/private";
@@ -10,20 +11,34 @@ import * as privateSchema from "@/db/schema/private";
  * - pooled runtime connection (DATABASE_URL)
  * - direct owner connection for migrations/dumps (DIRECT_DATABASE_URL)
  *
- * DB_DISABLE_PREPARED_STATEMENTS=true must be set when the runtime URL points
- * at a transaction-pooled endpoint (for example Supabase Supavisor), because
- * prepared statements are incompatible with transaction-mode pooling.
+ * Prepared statements do not survive a transaction-mode pooler. The endpoint
+ * is detected from the hostname (Neon `-pooler`, Supabase Supavisor,
+ * pgbouncer), so the common case needs no configuration;
+ * DB_DISABLE_PREPARED_STATEMENTS=true forces it off for anything unrecognized.
  */
 function makeSql(url: string) {
   const cfg = config();
-  return postgres(url, {
-    prepare: !cfg.disablePreparedStatements,
+  const conn = normalizeConnectionUrl(url);
+
+  // A canonical ledger must not be willing to talk to a remote database in
+  // plaintext. Refuse at construction rather than discovering it in a capture.
+  if (
+    cfg.appEnv === "production" &&
+    !conn.isLocal &&
+    (conn.ssl === false || conn.ssl === "prefer")
+  ) {
+    throw new Error(
+      "Refusing to connect to a remote database without TLS in production. " +
+        "Set sslmode=require (or verify-full) on the connection URL.",
+    );
+  }
+
+  return postgres(conn.connectionString, {
+    prepare: !cfg.disablePreparedStatements && !conn.isTransactionPooler,
     max: 10,
     idle_timeout: 20,
     connect_timeout: 10,
-    // Local development talks to Postgres over unix sockets / http; never
-    // fail on missing TLS locally, providers supply sslmode in the URL.
-    ssl: url.includes("sslmode=disable") ? false : "prefer",
+    ssl: conn.ssl,
   });
 }
 

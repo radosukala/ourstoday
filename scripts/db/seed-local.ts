@@ -7,8 +7,8 @@
  * run against a production or shared database. It refuses to do anything if
  * any entry already exists, so re-running is safe and honest.
  */
-import postgres from "postgres";
-import { directUrl } from "./dbadmin";
+import { connect, directUrl } from "./dbadmin";
+import { normalizeConnectionUrl } from "../../src/db/connection-url";
 import { digestEvent } from "../../src/ledger/events";
 
 const ORIGIN_DECLARATION_VERSION = "ours-founding-declaration/0.1";
@@ -17,7 +17,20 @@ const ORIGIN_LEGAL_STATUS_VERSION = "ours-legal-status/0.1";
 
 /** Exported so the e2e provisioning script can reuse identical seeding. */
 export async function seedLocal(): Promise<void> {
-  const sql = postgres(directUrl(), { max: 1 });
+  const target = directUrl();
+  const { isLocal, hostname } = normalizeConnectionUrl(target);
+  // Production genesis treatment is handoff decision 3 and is UNRESOLVED. This
+  // script writes ordinal #000001 as local concept data; running it against a
+  // remote database would quietly answer a question a human has not answered.
+  if (!isLocal) {
+    throw new Error(
+      "seed-local refuses to write to the remote host '" +
+        hostname +
+        "'. It seeds the declared origin as LOCAL CONCEPT DATA, and how #000001 " +
+        "exists in production is an open founder-steward decision (handoff 16.3).",
+    );
+  }
+  const sql = connect(target, { max: 1 });
   try {
     const existing = await sql.unsafe<{ count: string }[]>(
       "SELECT count(*)::text AS count FROM ledger.entry",

@@ -13,8 +13,8 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import postgres from "postgres";
-import { adminSql, directUrl, createScratchDatabase, dropDatabase } from "./dbadmin";
+import type postgres from "postgres";
+import { adminSql, connect, directUrl, createScratchDatabase, dropDatabase } from "./dbadmin";
 import { notRun, requireDatabaseUrl } from "../env";
 import { digestEvent } from "../../src/ledger/events";
 
@@ -171,7 +171,7 @@ async function main() {
       { env: pgEnv(), stdio: "pipe" },
     );
 
-    const restored = postgres(urlForDatabase(targetDb), { max: 1, prepare: false });
+    const restored = connect(urlForDatabase(targetDb), { max: 1 });
     let partial: Omit<VerifyResult, "appendOnlyEnforced">;
     try {
       partial = await verifyRestore(restored);
@@ -183,7 +183,7 @@ async function main() {
     // the source database's DDL.
     let appendOnlyEnforced = false;
     if (partial.events > 0) {
-      const probe = postgres(urlForDatabase(targetDb), { max: 1, prepare: false });
+      const probe = connect(urlForDatabase(targetDb), { max: 1 });
       try {
         await probe`UPDATE ledger.event SET type = 'tampered' WHERE seq = (SELECT min(seq) FROM ledger.event)`;
       } catch {
