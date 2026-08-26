@@ -11,7 +11,10 @@
     "onlyBuiltDependencies": [
       "@playwright/test",
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "esbuild@<0.25.0": "^0.25.0"
+    }
   },
   "scripts": {
     "dev": "next dev",

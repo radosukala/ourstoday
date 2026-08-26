@@ -3,9 +3,20 @@
  */
 import { migrate } from "./migrate";
 import { adminSql, createScratchDatabase, dropDatabase } from "./dbadmin";
+import { notRun, requireDatabaseUrl } from "../env";
 
 async function main() {
-  const dbName = await createScratchDatabase("ours_migrate_check");
+  requireDatabaseUrl("db:migrate:check");
+  let dbName: string;
+  try {
+    dbName = await createScratchDatabase("ours_migrate_check");
+  } catch (error) {
+    // No reachable PostgreSQL is missing infrastructure, not a failing gate.
+    notRun(
+      "db:migrate:check",
+      "cannot reach PostgreSQL: " + (error instanceof Error ? error.message : String(error)),
+    );
+  }
   const sql = adminSql(dbName);
   let failed = false;
   try {
@@ -13,8 +24,8 @@ async function main() {
     const tables = await sql<{ schemaname: string; tablename: string }[]>`
       SELECT schemaname, tablename FROM pg_tables
       WHERE schemaname IN ('auth', 'private', 'ledger') ORDER BY 1, 2`;
-    console.log(`migrate-check: OK on ${dbName}; applied: ${ran.join(", ")}`);
-    console.log(`tables created: ${(await tables).length}`);
+    console.info(`migrate-check: OK on ${dbName}; applied: ${ran.join(", ")}`);
+    console.info(`tables created: ${(await tables).length}`);
   } catch (error) {
     failed = true;
     console.error("migrate-check FAILED:", error instanceof Error ? error.message : error);

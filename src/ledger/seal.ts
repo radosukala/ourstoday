@@ -257,6 +257,15 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     const entry = inserted[0];
     if (!entry) throw new Error("ENTRY_INSERT_FAILED");
 
+    // ---- Consent record (handoff section 8, transaction effect 2) ---------------
+    // The exact document versions this person accepted, recorded inside the same
+    // transaction as the entry so consent can never exist without the entry or
+    // the entry without its consent. /api/v1/me/export reads these back.
+    await tx.unsafe(
+      "INSERT INTO private.consent_record (person_id, subject_type, subject_id, document_versions) VALUES ($1, 'ledger.entry', $2, $3::text::jsonb)",
+      [person[0].id, entry.id, jsonParam(input.acceptedVersions)],
+    );
+
     // ---- Append-only events (chain serialized by advisory lock) ----------------
     await tx.unsafe("SELECT pg_advisory_xact_lock(hashtext('ledger.event.chain'))");
 

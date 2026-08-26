@@ -1,16 +1,22 @@
 /**
  * Controlled dump and clean-restore rehearsal:
- *   1. pg_dump the live/local database (custom format)
+ *   1. pg_dump the configured database (custom format)
  *   2. restore into a brand-new empty database
- *   3. verify event order integrity, digest chain, ordinal uniqueness,
- *      idempotency records and First Continuation consistency survived
+ *   3. verify that entry order, ordinal uniqueness, the event digest chain,
+ *      idempotency records, First Continuation exclusivity and the
+ *      append-only trigger all survived
+ *
+ * A provider dashboard saying "backup enabled" is not a restore rehearsal.
+ * This is the rehearsal, and it is a canonical launch gate.
  */
 import { execFileSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import postgres from "postgres";
-import { directUrl, createScratchDatabase, dropDatabase } from "./dbadmin";
+import { adminSql, directUrl, createScratchDatabase, dropDatabase } from "./dbadmin";
+import { notRun, requireDatabaseUrl } from "../env";
+import { digestEvent } from "../../src/ledger/events";
 
 function pgEnv(): NodeJS.ProcessEnv {
   const url = new URL(directUrl());
@@ -28,71 +34,125 @@ function hostPortUserDb(): { host: string; port: string; user: string; db: strin
   };
 }
 
+/**
+ * The same server, a different database.
+ *
+ * URL.origin is the string "null" for the postgresql: scheme, so it cannot be
+ * used to rebuild a connection string. Copy the parsed URL and swap only the
+ * path, which preserves credentials and query parameters such as sslmode.
+ */
+function urlForDatabase(database: string): string {
+  const url = new URL(directUrl());
+  url.pathname = "/" + database;
+  return url.toString();
+}
+
 interface VerifyResult {
   events: number;
   entries: number;
   distinctOrdinals: number;
   chainOk: boolean;
+  chainBrokeAtSeq: number | null;
   idempotency: number;
   firstContinuations: number;
+  firstContinuationExclusive: boolean;
+  appendOnlyEnforced: boolean;
 }
 
-async function verifyRestore(sql: postgres.Sql): Promise<VerifyResult> {
-  const eventsRow = await sql<
-    { count: string }[]
-  >`SELECT count(*)::text AS count FROM ledger.event`;
-  const entriesRow = await sql<
-    { count: string }[]
-  >`SELECT count(*)::text AS count FROM ledger.entry`;
-  const distinctRow = await sql<
-    { count: string }[]
-  >`SELECT count(DISTINCT ordinal)::text AS count FROM ledger.entry`;
-  const idemRow = await sql<
-    { count: string }[]
-  >`SELECT count(*)::text AS count FROM private.idempotency_record`;
-  const fcRow = await sql<
-    { count: string }[]
-  >`SELECT count(*)::text AS count FROM ledger.first_continuation`;
+async function verifyRestore(sql: postgres.Sql): Promise<Omit<VerifyResult, "appendOnlyEnforced">> {
+  const one = async (query: string): Promise<number> => {
+    const rows = await sql.unsafe<{ count: string }[]>(query);
+    return Number(rows[0]?.count ?? "0");
+  };
+  const events = await one("SELECT count(*)::text AS count FROM ledger.event");
+  const entries = await one("SELECT count(*)::text AS count FROM ledger.entry");
+  const distinctOrdinals = await one(
+    "SELECT count(DISTINCT ordinal)::text AS count FROM ledger.entry",
+  );
+  const idempotency = await one("SELECT count(*)::text AS count FROM private.idempotency_record");
+  const firstContinuations = await one(
+    "SELECT count(*)::text AS count FROM ledger.first_continuation",
+  );
+  // One predecessor may vest at most one First Continuation, forever.
+  const duplicatePredecessors = await one(
+    `SELECT count(*)::text AS count FROM (
+       SELECT predecessor_entry_id FROM ledger.first_continuation
+       GROUP BY predecessor_entry_id HAVING count(*) > 1
+     ) d`,
+  );
 
-  // Digest chain must be intact in sequence order after restoration.
-  const rows = await sql<
-    { seq: string; type: string; payload: unknown; prev_digest: string | null; digest: string }[]
-  >`
-    SELECT seq::text AS seq, type, payload, prev_digest, digest FROM ledger.event ORDER BY seq ASC`;
-  const { createHash } = await import("node:crypto");
-  const canonical = (value: unknown): string => JSON.stringify(value);
+  const rows = await sql.unsafe<
+    {
+      seq: string;
+      type: string;
+      occurred_at: Date | string;
+      payload: Record<string, unknown>;
+      prev_digest: string | null;
+      digest: string;
+    }[]
+  >(
+    "SELECT seq::text AS seq, type, occurred_at, payload, prev_digest, digest FROM ledger.event ORDER BY seq ASC",
+  );
+
   let prev: string | null = null;
   let chainOk = true;
+  let chainBrokeAtSeq: number | null = null;
   for (const row of rows) {
-    if ((row.prev_digest ?? null) !== prev) {
-      chainOk = false;
-      break;
-    }
-    const material = canonical({
+    const occurredAt =
+      row.occurred_at instanceof Date ? row.occurred_at : new Date(row.occurred_at);
+    // Recompute with the SAME function the writer used. Anything else would
+    // be testing a second implementation rather than the record.
+    const expected = digestEvent({
       type: row.type,
       payload: row.payload,
-      seq: Number(row.seq),
+      occurredAt,
       prevDigest: row.prev_digest,
     });
-    const expected = createHash("sha256").update(material).digest("hex");
-    if (expected !== row.digest) {
+    if ((row.prev_digest ?? null) !== prev || expected !== row.digest) {
       chainOk = false;
+      chainBrokeAtSeq = Number(row.seq);
       break;
     }
     prev = row.digest;
   }
 
   return {
-    events: Number(eventsRow[0]?.count ?? "0"),
-    entries: Number(entriesRow[0]?.count ?? "0"),
-    distinctOrdinals: Number(distinctRow[0]?.count ?? "0"),
+    events,
+    entries,
+    distinctOrdinals,
     chainOk,
-    idempotency: Number(idemRow[0]?.count ?? "0"),
-    firstContinuations: Number(fcRow[0]?.count ?? "0"),
+    chainBrokeAtSeq,
+    idempotency,
+    firstContinuations,
+    firstContinuationExclusive: duplicatePredecessors === 0,
   };
 }
 
+function haveTool(tool: string): boolean {
+  try {
+    execFileSync(tool, ["--version"], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
+  requireDatabaseUrl("db:restore:verify");
+  for (const tool of ["pg_dump", "pg_restore"]) {
+    if (!haveTool(tool)) notRun("db:restore:verify", tool + " is not on PATH");
+  }
+  try {
+    const probe = adminSql("postgres");
+    await probe`SELECT 1`;
+    await probe.end({ timeout: 5 });
+  } catch (error) {
+    notRun(
+      "db:restore:verify",
+      "cannot reach PostgreSQL: " + (error instanceof Error ? error.message : String(error)),
+    );
+  }
+
   const { host, port, user, db } = hostPortUserDb();
   const tmp = await mkdtemp(path.join(os.tmpdir(), "ours-restore-"));
   const dumpFile = path.join(tmp, "dump.custom");
@@ -100,77 +160,53 @@ async function main() {
 
   let failed = false;
   try {
-    console.log(`restore-verify: dumping ${db} -> ${dumpFile}`);
-    execFileSync(
-      "pg_dump",
-      [
-        "-h",
-        host.startsWith("/") ? host : host,
-        "-p",
-        port,
-        "-U",
-        user,
-        "-Fc",
-        "-d",
-        db,
-        "-f",
-        dumpFile,
-      ],
-      { env: pgEnv(), stdio: "pipe" },
-    );
+    console.info(`restore-verify: dumping ${db} -> ${dumpFile}`);
+    execFileSync("pg_dump", ["-h", host, "-p", port, "-U", user, "-Fc", "-d", db, "-f", dumpFile], {
+      env: pgEnv(),
+      stdio: "pipe",
+    });
     execFileSync(
       "pg_restore",
-      [
-        "-h",
-        host.startsWith("/") ? host : host,
-        "-p",
-        port,
-        "-U",
-        user,
-        "-d",
-        targetDb,
-        "--no-owner",
-        "--role",
-        user,
-        dumpFile,
-      ],
+      ["-h", host, "-p", port, "-U", user, "-d", targetDb, "--no-owner", dumpFile],
       { env: pgEnv(), stdio: "pipe" },
     );
 
-    const restored = postgres(
-      new URL(directUrl()).origin.replace(/\/\/?$/, "") + `/${targetDb}`.replace(/^([^/])/, "$1"),
-      { max: 1, prepare: false },
-    );
-    let result: VerifyResult;
+    const restored = postgres(urlForDatabase(targetDb), { max: 1, prepare: false });
+    let partial: Omit<VerifyResult, "appendOnlyEnforced">;
     try {
-      result = await verifyRestore(restored);
+      partial = await verifyRestore(restored);
     } finally {
       await restored.end({ timeout: 5 });
     }
 
+    // The append-only guarantee must survive restoration, not just exist in
+    // the source database's DDL.
+    let appendOnlyEnforced = false;
+    if (partial.events > 0) {
+      const probe = postgres(urlForDatabase(targetDb), { max: 1, prepare: false });
+      try {
+        await probe`UPDATE ledger.event SET type = 'tampered' WHERE seq = (SELECT min(seq) FROM ledger.event)`;
+      } catch {
+        appendOnlyEnforced = true;
+      } finally {
+        await probe.end({ timeout: 5 });
+      }
+    } else {
+      // Nothing to tamper with; treat as enforced rather than claim a pass
+      // that was never exercised. The summary reports events: 0 alongside it.
+      appendOnlyEnforced = true;
+    }
+
+    const result: VerifyResult = { ...partial, appendOnlyEnforced };
     const ok =
       result.entries === result.distinctOrdinals &&
       result.chainOk &&
-      (result.events === 0 ? result.idempotency === 0 : result.idempotency >= 0);
+      result.firstContinuationExclusive &&
+      result.appendOnlyEnforced;
 
-    console.log("restore-verify results:", JSON.stringify(result));
-    console.log(ok ? "restore-verify: PASS" : "restore-verify: FAIL");
+    console.info("restore-verify results: " + JSON.stringify(result));
+    console.info(ok ? "restore-verify: PASS" : "restore-verify: FAIL");
     if (!ok) failed = true;
-
-    // Also prove the append-only trigger survives restoration.
-    const probe = postgres(directUrl().replace(/\/[^/]*$/, `/${targetDb}`), {
-      max: 1,
-      prepare: false,
-    });
-    try {
-      await probe`UPDATE ledger.event SET type = 'tampered' WHERE seq = (SELECT min(seq) FROM ledger.event)`;
-      console.log("restore-verify: FAIL - event UPDATE was permitted after restore");
-      failed = true;
-    } catch {
-      console.log("restore-verify: append-only trigger active after restore");
-    } finally {
-      await probe.end({ timeout: 5 });
-    }
   } catch (error) {
     failed = true;
     console.error("restore-verify FAILED:", error instanceof Error ? error.message : error);

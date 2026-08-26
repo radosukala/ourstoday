@@ -5,6 +5,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
+import { requireDatabaseUrl } from "../env";
 
 const MIGRATIONS_DIR = path.join(process.cwd(), "src", "db", "migrations");
 
@@ -37,13 +38,12 @@ export async function migrate(sql: postgres.Sql): Promise<string[]> {
 }
 
 async function main() {
-  const url = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
-  if (!url) throw new Error("DIRECT_DATABASE_URL or DATABASE_URL is required");
+  const url = requireDatabaseUrl("db:migrate");
   const sql = postgres(url, { max: 1 });
   try {
     const ran = await migrate(sql);
-    console.log(`migrate: applied ${ran.length} migration(s)`);
-    for (const f of ran) console.log(`  - ${f}`);
+    console.info(`migrate: applied ${ran.length} migration(s)`);
+    for (const f of ran) console.info(`  - ${f}`);
   } finally {
     await sql.end({ timeout: 5 });
   }

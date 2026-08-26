@@ -1,8 +1,10 @@
 import postgres from "postgres";
+import { loadEnv } from "../env";
 
 /** Administrative helpers against the direct (owner) connection. */
 
 export function directUrl(): string {
+  loadEnv();
   const url = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
   if (!url) throw new Error("DIRECT_DATABASE_URL or DATABASE_URL is required");
   return url;
