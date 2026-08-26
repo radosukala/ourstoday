@@ -5,6 +5,7 @@ import { listConformanceRuns, type ConformanceRunRow } from "@/ledger/conformanc
 import { listAnchors, type AnchorRow } from "@/ledger/anchor";
 import { getSql } from "@/db/sqltype";
 import { STATUS_LINE } from "@/legal/documents";
+import type { Metadata } from "next";
 
 /**
  * Cached, not dynamic, and this is a cost control.
@@ -21,6 +22,27 @@ import { STATUS_LINE } from "@/legal/documents";
  * account at /me stays dynamic.
  */
 export const revalidate = 60;
+
+/**
+ * Its own share card. Nobody has shipped a page whose primary content is what
+ * is not yet true about itself, and inheriting the homepage's card would hide
+ * exactly that when someone links it.
+ */
+export const metadata: Metadata = {
+  title: "What is not yet true about us · OURS TODAY",
+  description:
+    "The sixteen gates the Founding Ledger must pass before membership can be issued, live, with what blocks each one. Plus the latest conformance run - published pass or fail.",
+  openGraph: {
+    title: "What is not yet true about us",
+    description:
+      "Sixteen launch gates, live, with the named human decision blocking each. Conformance published either way.",
+  },
+  twitter: {
+    title: "What is not yet true about us",
+    description:
+      "Sixteen launch gates, live, with the named human decision blocking each. Conformance published either way.",
+  },
+};
 
 async function counts(): Promise<{ entries: number | null; withdrawn: number | null }> {
   try {

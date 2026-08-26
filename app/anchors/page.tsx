@@ -1,5 +1,6 @@
 import { Masthead } from "@/components/Masthead";
 import { listAnchors, ANCHOR_ALGORITHM, type AnchorRow } from "@/ledger/anchor";
+import type { Metadata } from "next";
 
 /**
  * Cached, not dynamic, and this is a cost control.
@@ -16,6 +17,22 @@ import { listAnchors, ANCHOR_ALGORITHM, type AnchorRow } from "@/ledger/anchor";
  * account at /me stays dynamic.
  */
 export const revalidate = 300;
+
+export const metadata: Metadata = {
+  title: "Provable without us · OURS TODAY",
+  description:
+    "Merkle roots over the canonical event log, published at a fixed cadence and deposited where durability does not depend on OURS existing. Verify one yourself from the page alone.",
+  openGraph: {
+    title: "Provable without us",
+    description:
+      "A record a single company can lose is not a public record. Verify our Merkle roots yourself, offline.",
+  },
+  twitter: {
+    title: "Provable without us",
+    description:
+      "A record a single company can lose is not a public record. Verify our Merkle roots yourself, offline.",
+  },
+};
 
 export default async function AnchorsPage() {
   const anchors = await listAnchors(200).catch((): AnchorRow[] => []);

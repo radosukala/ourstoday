@@ -50,6 +50,15 @@ const nextConfig: NextConfig = {
         source: "/r/:token",
         headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
       },
+      {
+        // Share previews are refetched by every scraper that sees the link.
+        // Next serves public/ with max-age=0 by default, so each one pulls the
+        // whole image again. The content only changes when we replace it.
+        source: "/og.png",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, s-maxage=604800, immutable" },
+        ],
+      },
     ];
   },
 };
