@@ -15,9 +15,14 @@ policy. Every gap below is a launch gate.
 
 ## Who is responsible
 
-**NOT YET DETERMINED.** The legal controller identity is handoff decision 16.2.
-Until a controller exists, there is no one to be accountable to you, which is
-precisely why this build does not collect real identity data.
+**Ctrl AI, Inc.**, a company incorporated in the United States, is the
+controller for the personal data described here. Named by founder-steward
+decision on 26 August 2026.
+
+Naming a controller is not the same as a completed legal review: the lawful
+basis for each field, and the retention schedule, still require a licensed
+reviewer with a securities-aware read in both the United States and Czechia
+(handoff decisions 6 and 12). Those remain open and are named on `/status`.
 
 ## What is collected, and why
 
@@ -83,7 +88,7 @@ CHOSEN** (handoff 16.1). Once chosen they must be named here.
 
 ## Gaps blocking publication
 
-1. controller identity;
+1. ~~controller identity~~ — **decided: Ctrl AI, Inc.**;
 2. legal basis per field;
 3. retention and erasure schedule;
 4. how long session IP addresses and user agents are kept — **that they are

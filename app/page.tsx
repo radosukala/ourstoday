@@ -4,7 +4,21 @@ import { listPublicEntries, type PublicEntry } from "@/ledger/queries";
 import { foundingState } from "@/ledger/state";
 import { LEGAL_MEMBERSHIP_STATUS, STATUS_LINE, THESIS } from "@/legal/documents";
 
-export const dynamic = "force-dynamic";
+/**
+ * Cached, not dynamic, and this is a cost control.
+ *
+ * Neon bills compute time and only stops billing once the compute SUSPENDS,
+ * which needs a few minutes with no connections. A public page that queries on
+ * every request means one crawler, or one burst of attention, keeps the
+ * database awake continuously. Serving this from the cache and revalidating on
+ * a timer bounds database wake-ups to roughly one per window regardless of
+ * traffic.
+ *
+ * The cost is staleness of up to 60 seconds on a public projection,
+ * which is acceptable: nothing here is session-specific, and a person's own
+ * account at /me stays dynamic.
+ */
+export const revalidate = 60;
 
 interface LedgerRow {
   ordinal: number;

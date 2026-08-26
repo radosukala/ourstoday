@@ -124,8 +124,24 @@ function deployedCommit(): string {
 /**
  * Liveness and dependency state. Exposes no private configuration: no host,
  * no user, no connection string, no raw driver message.
+ *
+ * SHALLOW BY DEFAULT, and that is a cost decision worth understanding.
+ *
+ * Neon bills compute time, and a serverless compute only stops costing when it
+ * SUSPENDS. Suspension happens after a few minutes of no connections, so any
+ * monitor polling a database-touching endpoint every minute keeps the compute
+ * awake continuously - roughly 700 CU-hours a month to answer a question
+ * nobody asked, on a ledger with no users.
+ *
+ * So: the default check proves the APPLICATION is alive and serving, and
+ * touches no database. `?deep=1` runs the real dependency check and is what a
+ * human uses when investigating. Continuous verification of the database is
+ * the nightly conformance run's job - it already checks far more than a
+ * SELECT 1, and it publishes the result either way.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const deep = new URL(req.url).searchParams.get("deep") === "1";
+
   try {
     config();
   } catch (error) {
@@ -146,6 +162,16 @@ export async function GET() {
       "Configuration could not be read (" + diag.reason + "/" + diag.code + ").",
       503,
     );
+  }
+
+  if (!deep) {
+    return jsonOk({
+      service: "OURS TODAY",
+      checks: "shallow",
+      note: "Application liveness only. Add ?deep=1 for the database check.",
+      commit: deployedCommit(),
+      time: new Date().toISOString(),
+    });
   }
 
   try {
@@ -195,6 +221,7 @@ export async function GET() {
 
   return jsonOk({
     service: "OURS TODAY",
+    checks: "deep",
     ledger: state.ledgerState,
     canAcceptEntries: state.canAcceptEntries,
     commit: deployedCommit(),

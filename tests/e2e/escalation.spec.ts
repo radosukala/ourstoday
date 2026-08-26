@@ -64,6 +64,58 @@ test.describe("the escalated instrument", () => {
     await expect(page.locator(".ledger-table")).toContainText("Witnessed Entrant");
   });
 
+  test("health is shallow by default and deep only on request", async ({ request, baseURL }) => {
+    // Shallow is a COST control: Neon bills compute time and only stops
+    // billing once the compute suspends. A monitor polling a
+    // database-touching endpoint every minute keeps it awake permanently.
+    const shallow = await request.get(baseURL + "/api/health");
+    expect(shallow.status()).toBe(200);
+    const shallowBody = (await shallow.json()) as Record<string, unknown>;
+    expect(shallowBody.checks).toBe("shallow");
+    // It must not report ledger state, because it did not look.
+    expect(shallowBody.ledger).toBeUndefined();
+
+    const deep = await request.get(baseURL + "/api/health?deep=1");
+    expect(deep.status()).toBe(200);
+    const deepBody = (await deep.json()) as Record<string, unknown>;
+    expect(deepBody.checks).toBe("deep");
+    expect(deepBody.ledger).toBe("OPEN");
+
+    // Neither form leaks the database endpoint or the user.
+    for (const body of [shallowBody, deepBody]) {
+      expect(JSON.stringify(body)).not.toMatch(/postgres|neon\.tech|password|@/i);
+    }
+  });
+
+  test("a sealed entry appears on the public ledger immediately, not after the cache window", async ({
+    page,
+  }) => {
+    // The public pages are cached so a crawler cannot hold the database awake.
+    // A seal must still be visible at once - waiting a minute to appear on the
+    // ledger you just joined would read as broken.
+    const email = uniqueEmail("cachebust");
+    await page.goto("/enter");
+    await emailField(page).fill(email);
+    await page.getByRole("button", { name: /send/i }).click();
+    await expect(page).toHaveURL(/check-email/);
+
+    const captured = await newestCapturedConfirmUrl();
+    await page.goto(captured.url);
+    await page.getByRole("button", { name: /continue/i }).click();
+    await expect(page).toHaveURL(/enter\/continue/, { timeout: 20000 });
+
+    const name = "Cache Bust " + Date.now().toString(36);
+    await publicNameField(page).fill(name);
+    for (const box of await page.getByRole("checkbox").all()) {
+      if (!(await box.isChecked())) await box.check();
+    }
+    await page.getByRole("button", { name: /seal/i }).click();
+    await expect(page.locator("article.receipt-block").first()).toBeVisible({ timeout: 20000 });
+
+    await page.goto("/");
+    await expect(page.locator(".ledger-table")).toContainText(name);
+  });
+
   test("the entry form treats a witness as optional, not as a lesser path", async ({ page }) => {
     await page.goto("/enter");
     // Nothing on the first step demands a witness or implies one is expected.

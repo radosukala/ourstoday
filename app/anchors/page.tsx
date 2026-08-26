@@ -1,7 +1,21 @@
 import { Masthead } from "@/components/Masthead";
 import { listAnchors, ANCHOR_ALGORITHM, type AnchorRow } from "@/ledger/anchor";
 
-export const dynamic = "force-dynamic";
+/**
+ * Cached, not dynamic, and this is a cost control.
+ *
+ * Neon bills compute time and only stops billing once the compute SUSPENDS,
+ * which needs a few minutes with no connections. A public page that queries on
+ * every request means one crawler, or one burst of attention, keeps the
+ * database awake continuously. Serving this from the cache and revalidating on
+ * a timer bounds database wake-ups to roughly one per window regardless of
+ * traffic.
+ *
+ * The cost is staleness of up to 300 seconds on a public projection,
+ * which is acceptable: nothing here is session-specific, and a person's own
+ * account at /me stays dynamic.
+ */
+export const revalidate = 300;
 
 export default async function AnchorsPage() {
   const anchors = await listAnchors(200).catch((): AnchorRow[] => []);

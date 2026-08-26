@@ -186,11 +186,13 @@ rather than reading production logs. That trade is deliberate.
 
 ## 7. Open decisions this document cannot close
 
-1. Legal basis for each field — needs a licensed reviewer (handoff 16.2, 16.12).
+1. Legal basis for each field — needs a licensed reviewer (handoff 16.12).
+   The controller is decided: **Ctrl AI, Inc.**
 2. Whether `auth.session.ip_address` / `user_agent` are kept, and for how long.
 3. Retention schedule for private auth and security records (handoff 16.6).
 4. Public timestamp precision (handoff 16.4).
-5. Identity of the legal controller (handoff 16.2).
 6. Provider choice and its sub-processor list (handoff 16.1).
 
-Until 1, 2 and 5 are answered, this build must not collect real identity data.
+The controller is named. Until the legal basis, the session-data retention
+period and a licensed review are settled, this build must not collect real
+identity data at scale.

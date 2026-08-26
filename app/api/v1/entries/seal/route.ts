@@ -4,6 +4,7 @@ import { config } from "@/config";
 import { checkMutationOrigin } from "@/security/origin";
 import { consumeRateLimit } from "@/security/ratelimit";
 import { ensurePerson, getPersonByAuthUserId, resolvePredecessorForSeal } from "@/lib/person";
+import { revalidatePath } from "next/cache";
 import { sealEntry } from "@/ledger/seal";
 import {
   AlreadySealedError,
@@ -84,6 +85,15 @@ export async function POST(req: Request) {
         ? { witnessOrdinal: parsed.data.witnessOrdinal }
         : {}),
     });
+
+    // The public pages are cached to keep a crawler from holding the database
+    // awake (see the revalidate note on those pages). A seal is the one event
+    // that must not wait for a timer: the person who just entered, and anyone
+    // they immediately tell, should see the ledger showing it. Sealing happens
+    // once per person, so busting the cache here costs one render, not one per
+    // request.
+    revalidatePath("/");
+    revalidatePath("/status");
 
     const relayUrl = result.relayToken
       ? cfg.appUrl.replace(/\/+$/, "") + "/r/" + result.relayToken

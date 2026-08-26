@@ -35,9 +35,13 @@ function makeSql(url: string) {
 
   return postgres(conn.connectionString, {
     prepare: !cfg.disablePreparedStatements && !conn.isTransactionPooler,
-    max: 10,
-    idle_timeout: 20,
-    connect_timeout: 10,
+    // Each serverless instance opens its own pool, so a high per-instance max
+    // multiplies connections across instances without serving more traffic.
+    max: Number(process.env.DB_POOL_MAX ?? "3"),
+    // Closing idle connections quickly is what lets a scale-to-zero compute
+    // actually suspend, which is where the cost saving comes from.
+    idle_timeout: Number(process.env.DB_IDLE_TIMEOUT_SECONDS ?? "10"),
+    connect_timeout: Number(process.env.DB_CONNECT_TIMEOUT_SECONDS ?? "15"),
     ssl: conn.ssl,
   });
 }
