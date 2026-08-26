@@ -1,14 +1,14 @@
 # OURS Founding Ledger · Next Coding Session Prompt
 
 Copy the prompt below into a new coding session rooted at
-`/Users/rado/code/ourstoday`.
+the repository working tree.
 
 ---
 
 ```text
 You are building the first working backend for OURS TODAY in:
 
-/Users/rado/code/ourstoday
+<repository working tree>
 
 Your authority is BUILD inside this local workspace. You may inspect, edit,
 install justified dependencies, run local PostgreSQL and execute tests. You do

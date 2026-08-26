@@ -487,7 +487,7 @@ hypotheses:
 
 scope:
   allowed_paths_or_systems:
-    - /Users/rado/code/ourstoday
+    - <repository working tree>
   permitted_actions:
     - edit local files
     - run local validation

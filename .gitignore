@@ -24,3 +24,9 @@ playwright/.cache/
 
 # ours-fork output; regenerate with `pnpm fork export`
 /fork-export/
+
+# Material that cannot be public without harming a person or breaking a legal
+# obligation: review case notes, support correspondence, unexecuted legal
+# drafts, vendor contracts. NOT a place for anything merely unflattering.
+# The rule is docs/INTERNAL-BOUNDARY.md, and it is public.
+/docs-internal/

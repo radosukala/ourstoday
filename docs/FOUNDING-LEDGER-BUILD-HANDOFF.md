@@ -3,7 +3,7 @@
 **Handoff version:** 0.1  
 **Prepared:** 26 August 2026  
 **Status:** AUTHORIZED BUILD PLAN · DEPLOYMENT NOT YET AUTHORIZED  
-**Target workspace:** `/Users/rado/code/ourstoday`  
+**Target workspace:** the repository working tree  
 **Authority:** founder-steward request to prepare the complete next-session build  
 **Primary protocol:** [Founding Relay Protocol 0.1](./FOUNDING-RELAY-PROTOCOL.md)
 
@@ -236,7 +236,7 @@ current_state:
 
 scope:
   allowed_paths_or_systems:
-    - /Users/rado/code/ourstoday
+    - <repository working tree>
     - local test services created for this task
   permitted_actions:
     - inspect current files
