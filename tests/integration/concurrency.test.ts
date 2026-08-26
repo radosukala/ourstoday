@@ -44,9 +44,15 @@ describe("atomic seal under concurrency", () => {
 
     const ordinals = results.map((r) => r.ordinal).sort((a, b) => a - b);
     expect(new Set(ordinals).size).toBe(N);
-    // Counter starts at 2 in a fresh database; no gaps under concurrency.
-    expect(ordinals[0]).toBe(2);
-    expect(ordinals).toEqual(Array.from({ length: N }, (_, k) => k + 2));
+    // An UNSEEDED database issues #000001 first. This is not cosmetic: the
+    // allocator used to start at 2 because the local seed writes the declared
+    // origin as #000001, and a production database that never runs that seed
+    // therefore skipped #000001 entirely and gave its first entrant #000002.
+    // That happened on ourstoday.com. Assert the starting point, not a
+    // remembered constant.
+    expect(ordinals[0]).toBe(1);
+    // Contiguous: allocation under concurrency leaves no gaps.
+    expect(ordinals).toEqual(Array.from({ length: N }, (_, k) => k + 1));
 
     // Event chain integrity: recompute the whole chain.
     const { rawQuery } = await import("@/db/sqltype");
@@ -79,11 +85,13 @@ describe("atomic seal under concurrency", () => {
       ).toBe(ev.digest);
       prev = ev.digest;
     }
-    // Counter advanced exactly N from its seed of 2.
+    // The allocator advanced exactly N and points one past the highest issued
+    // ordinal, so no future seal can collide with one already handed out.
     const counterRows = await rawQuery<{ next_ordinal: number }>(
       "SELECT next_ordinal FROM ledger.ordinal_counter WHERE id = 1",
     );
-    expect(counterRows[0]?.next_ordinal).toBe(2 + N);
+    expect(counterRows[0]?.next_ordinal).toBe(1 + N);
+    expect(counterRows[0]?.next_ordinal).toBe(Math.max(...ordinals) + 1);
   });
 
   it("keeps one active entry per person even when double-sealing concurrently", async () => {
