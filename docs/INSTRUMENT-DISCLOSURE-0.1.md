@@ -1,6 +1,6 @@
 # Instrument Disclosure 0.1
 
-**Status:** PROPOSED · NOT YET ADOPTED
+**Status:** ADOPTED · 26 August 2026 · [decision receipt](./receipts/2026-08-26-instrument-disclosure-adoption.md)
 **Companion to:** [Event Schema 1.0](./EVENT-SCHEMA-1.0.md) §3.2, [Vision Escalation 0.1](./OURS-VISION-ESCALATION-0.1.md) §11
 **Purpose:** a format for disclosing what an AI instrument did, under whose authority
 
@@ -144,11 +144,16 @@ it to the event log and amend the schema with a receipt.
 
 ## 6. Adoption
 
-This document is a proposal. Adopting it requires a founder-steward decision
-and a receipt, like everything else. Adoption means:
+**Adopted 26 August 2026** by founder-steward decision, with a
+[receipt](./receipts/2026-08-26-instrument-disclosure-adoption.md). Adoption
+means:
 
 - every future session between a principal and an instrument produces a record;
 - records are published, including the ones that went badly;
 - the retrospective record for the sessions that built this application is
   written and published alongside them, rather than the practice starting
   conveniently after the messy part.
+
+That retrospective record is
+[`docs/sessions/2026-08-26-founding-build.md`](./sessions/2026-08-26-founding-build.md).
+It names six things the instrument got wrong.

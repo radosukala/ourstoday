@@ -66,6 +66,8 @@ export interface AppConfig {
   relaySecrets: Map<number, string>;
   appUrl: string;
   captureDir: string;
+  /** Platform headers trusted to carry the real client IP, most-specific first. */
+  trustedIpHeaders: string[];
 }
 
 export function config(): AppConfig {
@@ -92,6 +94,19 @@ export function config(): AppConfig {
       optionalEnv("BETTER_AUTH_URL") ??
       "http://127.0.0.1:3000",
     captureDir: optionalEnv("EMAIL_CAPTURE_DIR") ?? ".email-capture",
+    /**
+     * Headers trusted to carry the real client IP, most-specific first.
+     *
+     * Only a header the PLATFORM sets and OVERWRITES is trustworthy. Anything
+     * the caller can supply is an invitation to evade a rate limit by lying
+     * about who you are, which is worse than having no limit because it looks
+     * like one. Vercel sets x-vercel-forwarded-for itself and a client cannot
+     * inject it. Override for another platform with TRUSTED_IP_HEADERS.
+     */
+    trustedIpHeaders: (optionalEnv("TRUSTED_IP_HEADERS") ?? "x-vercel-forwarded-for")
+      .split(",")
+      .map((h) => h.trim().toLowerCase())
+      .filter(Boolean),
   };
   if (cfg.emailDeliveryMode === "resend" && !cfg.resendApiKey) {
     throw new Error("EMAIL_DELIVERY_MODE=resend requires RESEND_API_KEY");

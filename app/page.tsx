@@ -585,6 +585,16 @@ export default async function HomePage() {
               <strong>ANCHORS · PROVABLE WITHOUT US</strong>
               <em>MERKLE ROOTS</em>
             </a>
+            <a href="/source/INSTRUMENT-DISCLOSURE-0.1.md">
+              <span>17</span>
+              <strong>INSTRUMENT DISCLOSURE 0.1</strong>
+              <em>ADOPTED</em>
+            </a>
+            <a href="/source/sessions/2026-08-26-founding-build.md">
+              <span>18</span>
+              <strong>SESSION RECORD · WHAT THE AGENT GOT WRONG</strong>
+              <em>PUBLISHED</em>
+            </a>
           </nav>
         </section>
       </main>

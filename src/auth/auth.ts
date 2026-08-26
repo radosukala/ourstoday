@@ -60,6 +60,18 @@ function createAuth() {
     }),
     emailAndPassword: { enabled: false },
     advanced: {
+      /**
+       * Without a resolvable client IP, Better Auth falls back to ONE shared
+       * per-path bucket - a global rate limit, which protects nobody in
+       * particular. Naming the platform header makes the limit per-caller.
+       *
+       * Consequence, decided deliberately: Better Auth also stores this
+       * address on the session row. See DATA-MAP.md risk 1 and the privacy
+       * notice; the retention schedule for it is still an open decision.
+       */
+      ipAddress: {
+        ipAddressHeaders: cfg.trustedIpHeaders,
+      },
       useSecureCookies: cfg.appEnv === "production",
       defaultCookieAttributes: {
         sameSite: "lax",

@@ -45,26 +45,31 @@ outside the map, because the library stores real personal data.
 | `auth.user.created_at` / `updated_at` | PRIVATE | Account lifecycle | Life of account | Yes | With account |
 | `auth.session.id`, `.token` | SENSITIVE | Session credential | Until expiry or revocation | **No** | On sign-out/expiry |
 | `auth.session.expires_at` | PRIVATE | Session lifetime | Until expiry | Yes | With session |
-| `auth.session.ip_address` | SENSITIVE | Written by Better Auth by default | **See risk 1 below** | No | With session |
-| `auth.session.user_agent` | SENSITIVE | Written by Better Auth by default | **See risk 1 below** | No | With session |
+| `auth.session.ip_address` | SENSITIVE | Session security and per-caller rate limiting | **Undecided — see below** | No | With session |
+| `auth.session.user_agent` | SENSITIVE | Session security | **Undecided — see below** | No | With session |
 | `auth.session.user_id` | PRIVATE | Session owner | With session | Yes | With session |
 | `auth.account.*` | PRIVATE | Provider linkage. Unused in this slice: there is no social login and `emailAndPassword` is disabled, so `password` is always null | Life of account | Yes | With account |
 | `auth.verification.identifier` | SENSITIVE | The email a magic link was issued for | Until consumed or expired | No | On consumption/expiry |
 | `auth.verification.value` | SENSITIVE | **Hashed** magic-link token (`storeToken: "hashed"`) | Until consumed or expired | No | On consumption/expiry |
 | `auth.rate_limit.key`, `.count`, `.last_request` | OPERATIONAL | Database-backed auth rate limiting | Rolling window | No | Window rollover |
 
-> **Risk 1 — session IP and user agent.** Better Auth writes `ip_address` and
-> `user_agent` on every session. They are genuinely useful for account-security
-> review and they are also the most privacy-significant fields in the system.
-> They must be named in the privacy notice, or the columns must be disabled in
-> the Better Auth configuration before production. This is an open decision, not
-> a solved problem. See [PRIVACY-NOTICE-DRAFT.md](./PRIVACY-NOTICE-DRAFT.md).
-
-> **Risk 2 — shared rate-limit bucket.** The runtime currently cannot resolve a
-> client IP and falls back to one shared per-path bucket (Better Auth logs this
-> as a warning on boot). That is safe for privacy and weak for abuse control. It
-> must be configured with the platform's trusted proxy header before public
-> launch.
+> **DECIDED, 26 August 2026 — session IP is stored.** Better Auth writes
+> `ip_address` and `user_agent` on every session. The founder-steward chose to
+> resolve the client IP so that rate limiting is per-caller rather than one
+> shared global bucket; a limit that cannot tell callers apart protects nobody
+> in particular. The cost of that choice is that an IP address is stored on
+> every session row.
+>
+> This is the most privacy-significant field in the system and it must be named
+> in the privacy notice. Only a header the platform sets and overwrites is
+> trusted (`x-vercel-forwarded-for`, overridable via `TRUSTED_IP_HEADERS`),
+> because a client-supplied header would let anyone evade a limit by lying —
+> which is worse than no limit, since it looks like one.
+>
+> **Still open:** how long these are kept. That is part of the retention
+> schedule (handoff decision 6) and remains unanswered. Until it is answered,
+> the honest statement is that we store them and have not decided for how long.
+> See [PRIVACY-NOTICE-DRAFT.md](./PRIVACY-NOTICE-DRAFT.md).
 
 ---
 

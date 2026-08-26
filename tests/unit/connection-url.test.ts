@@ -7,7 +7,7 @@ describe("connection URL normalization", () => {
     // as STARTUP parameters, and the server answers
     // `unrecognized configuration parameter "channel_binding"`.
     const n = normalizeConnectionUrl(
-      "postgresql://u:p@ep-x-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+      "postgresql://USER:PASSWORD@ep-x-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
     );
     expect(n.connectionString).not.toContain("channel_binding");
     expect(n.connectionString).not.toContain("sslmode");
@@ -39,13 +39,14 @@ describe("connection URL normalization", () => {
   });
 
   it("detects transaction poolers, where named prepared statements do not survive", () => {
-    const neon = normalizeConnectionUrl("postgresql://u:p@ep-x-pooler.aws.neon.tech/db");
+    const neon = normalizeConnectionUrl("postgresql://USER:PASSWORD@ep-x-pooler.aws.neon.tech/db");
     expect(neon.isTransactionPooler).toBe(true);
-    const neonDirect = normalizeConnectionUrl("postgresql://u:p@ep-x.aws.neon.tech/db");
+    const neonDirect = normalizeConnectionUrl("postgresql://USER:PASSWORD@ep-x.aws.neon.tech/db");
     expect(neonDirect.isTransactionPooler).toBe(false);
     expect(
-      normalizeConnectionUrl("postgresql://u:p@aws-0-eu.pooler.supabase.com:6543/postgres")
-        .isTransactionPooler,
+      normalizeConnectionUrl(
+        "postgresql://USER:PASSWORD@aws-0-eu.pooler.supabase.com:6543/postgres",
+      ).isTransactionPooler,
     ).toBe(true);
     expect(normalizeConnectionUrl("postgresql://127.0.0.1:5432/x").isTransactionPooler).toBe(false);
   });

@@ -40,6 +40,9 @@ const ALLOWLIST = new Set([
   // Receipts are the record of what was decided and by whom.
   "receipts/2026-08-26-build-receipt-0.1.md",
   "receipts/2026-08-26-vision-escalation-adoption.md",
+  "receipts/2026-08-26-instrument-disclosure-adoption.md",
+  // Session records: what an AI instrument did, under whose authority.
+  "sessions/2026-08-26-founding-build.md",
 ]);
 
 const DOCS_ROOT = () => path.join(process.cwd(), "docs");

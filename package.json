@@ -36,7 +36,8 @@
     "security:audit": "pnpm audit --prod && tsx scripts/security/secret-scan.ts",
     "anchor": "tsx scripts/anchor.ts",
     "conformance": "tsx scripts/conformance.ts",
-    "fork": "tsx scripts/fork.ts"
+    "fork": "tsx scripts/fork.ts",
+    "db:doctor": "tsx scripts/db/doctor.ts"
   },
   "dependencies": {
     "better-auth": "1.7.1",

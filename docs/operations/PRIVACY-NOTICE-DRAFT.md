@@ -29,7 +29,7 @@ precisely why this build does not collect real identity data.
 | Your ordinal and the time it was sealed | The chronological record itself | **Yes** |
 | Which entry's relay you arrived through | Lineage between people | **Yes, as an ordinal** |
 | The document versions you accepted | So it is always clear what you agreed to | No |
-| Session data, including IP address and user agent | Session security. Written by the authentication library. | No |
+| Session data, including your IP address and browser user agent | Session security, and to rate-limit sign-in attempts per caller rather than globally | No |
 | Requests you make (correction, withdrawal) | To act on them and show you their status | No |
 
 Full field-level detail is in [DATA-MAP.md](./DATA-MAP.md).
@@ -66,7 +66,8 @@ built; the policy is not written, and this draft will not pretend otherwise.
 **NOT YET DECIDED** (handoff 16.6). Canonical ledger events are append-only and
 permanent by design — that is the point of a chronological record. Private
 authentication and security data must have a retention schedule, and does not
-yet.
+yet. That includes the IP address recorded with each session, which we do store
+and have not yet decided how long to keep.
 
 ## Who else sees your data
 
@@ -85,7 +86,8 @@ CHOSEN** (handoff 16.1). Once chosen they must be named here.
 1. controller identity;
 2. legal basis per field;
 3. retention and erasure schedule;
-4. whether session IP and user agent are kept, and for how long;
+4. how long session IP addresses and user agents are kept — **that they are
+   kept is decided; the retention period is not**;
 5. named processors;
 6. support and rights contact;
 7. licensed review of this document and of the boundary between Founding Ledger

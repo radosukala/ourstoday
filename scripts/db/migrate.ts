@@ -40,7 +40,9 @@ export async function migrate(sql: postgres.Sql): Promise<string[]> {
 
 async function main() {
   const url = requireDatabaseUrl("db:migrate");
-  const sql = connect(url, { max: 1 });
+  // DROP ... IF EXISTS emits a NOTICE per object. Dozens of them bury the one
+  // line that matters when a migration actually fails.
+  const sql = connect(url, { max: 1, onnotice: () => {} });
   try {
     const ran = await migrate(sql);
     console.info(`migrate: applied ${ran.length} migration(s)`);
