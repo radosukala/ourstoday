@@ -1,0 +1,11 @@
+{
+  "receipt": "ours.steward-receipt/v1",
+  "kind": "ledger-mode-closed",
+  "at": "2026-08-26T19:00:56.668Z",
+  "target": "CLOSED",
+  "actor": "founder-steward",
+  "reason": "pre-publication reset to start the ledger at #000001",
+  "result": {
+    "mode": "CLOSED"
+  }
+}

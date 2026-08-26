@@ -1,0 +1,11 @@
+{
+  "receipt": "ours.database-reset/v1",
+  "at": "2026-08-26T19:01:14.262Z",
+  "host": "ep-aged-leaf-ayhj949q.c-5.us-east-2.aws.neon.tech",
+  "destroyed": {
+    "entries": "1",
+    "events": "5",
+    "mode": "CLOSED"
+  },
+  "reason": "Pre-publication reset. Only valid while no ordinal has been issued to anyone but the operator; once a stranger holds a place, corrections append instead."
+}

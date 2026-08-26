@@ -108,11 +108,45 @@ export default async function HomePage() {
     loadLedgerRows(),
     foundingState().catch(() => ({ ledgerState: "CLOSED" as const, canAcceptEntries: false })),
   ]);
-  const formationStatus = state.canAcceptEntries
+
+  /**
+   * Every claim this page makes about its own status is DERIVED, never
+   * written down.
+   *
+   * These strings said "LOCAL · TEST BUILD" and "NO CANONICAL ENTRY ... IS
+   * CREATED HERE" for some time after the ledger went live and a real person
+   * held #000001. A page whose entire argument is that it tells the truth
+   * about itself cannot carry a hardcoded description of what it is; the
+   * moment reality moves, the page becomes the most visible lie on the site.
+   */
+  const canonical = live; // a shared ledger answered, with real entries in it
+  const open = state.canAcceptEntries;
+  const paused = state.ledgerState === "PAUSED";
+
+  const formationStatus = open
     ? "FORMING · OPEN FOR ENTRY"
-    : live
-      ? "FORMING · LEDGER CLOSED"
-      : "FORMING · LOCAL BUILD";
+    : paused
+      ? "FORMING · PAUSED"
+      : canonical
+        ? "FORMING · LEDGER CLOSED"
+        : "FORMING · LOCAL BUILD";
+
+  const sourceStatus = open
+    ? "PUBLIC · OPEN FOR ENTRY"
+    : paused
+      ? "PUBLIC · PAUSED"
+      : canonical
+        ? "PUBLIC · LEDGER CLOSED"
+        : "LOCAL · TEST BUILD";
+
+  const ledgerTapeState = canonical ? "LIVE" : "NOT LIVE";
+  const ledgerTapeNote = open
+    ? "Open for verified entry. Numbers are assigned only inside a committed transaction."
+    : paused
+      ? "Paused. Reading and data rights continue; new seals are refused."
+      : canonical
+        ? "Deployed and closed. Reopening is a steward act with a receipt."
+        : "Blocked on verification, privacy, recovery and integrity gates";
 
   return (
     <>
@@ -145,7 +179,7 @@ export default async function HomePage() {
               </div>
               <div>
                 <dt>SOURCE STATUS</dt>
-                <dd>LOCAL · TEST BUILD</dd>
+                <dd>{sourceStatus}</dd>
               </div>
             </dl>
           </div>
@@ -304,18 +338,22 @@ export default async function HomePage() {
                 <li>
                   <time dateTime="2026-08-26">DAY 1</time>
                   <div>
-                    <strong>LEDGER APPLICATION BUILT LOCALLY</strong>
-                    <span>Atomic seal, relays and rights paths under test</span>
+                    <strong>
+                      {canonical
+                        ? "LEDGER APPLICATION DEPLOYED"
+                        : "LEDGER APPLICATION BUILT LOCALLY"}
+                    </strong>
+                    <span>Atomic seal, relays and rights paths</span>
                   </div>
-                  <b>TEST BUILD</b>
+                  <b>{canonical ? "DEPLOYED" : "TEST BUILD"}</b>
                 </li>
-                <li className="event-open">
-                  <time>OPEN</time>
+                <li className={canonical ? undefined : "event-open"}>
+                  <time>{canonical ? "DAY 1" : "OPEN"}</time>
                   <div>
                     <strong>CANONICAL LEDGER</strong>
-                    <span>Blocked on verification, privacy, recovery and integrity gates</span>
+                    <span>{ledgerTapeNote}</span>
                   </div>
-                  <b>NOT LIVE</b>
+                  <b>{ledgerTapeState}</b>
                 </li>
               </ol>
             </section>
@@ -327,7 +365,8 @@ export default async function HomePage() {
               </header>
               <details open>
                 <summary>
-                  <span>D1.4</span> Static instrument becomes an application <b>SHIPPED LOCALLY</b>
+                  <span>D1.4</span> Static instrument becomes an application{" "}
+                  <b>{canonical ? "SHIPPED" : "SHIPPED LOCALLY"}</b>
                 </summary>
                 <dl className="build-fields">
                   <div>
@@ -344,7 +383,7 @@ export default async function HomePage() {
                   </div>
                   <div>
                     <dt>TRUTH</dt>
-                    <dd>Local test build. Canonical writes stay closed until readiness receipt.</dd>
+                    <dd>{sourceStatus}.</dd>
                   </div>
                 </dl>
               </details>
@@ -368,7 +407,11 @@ export default async function HomePage() {
                   </div>
                   <div>
                     <dt>TRUTH</dt>
-                    <dd>Implemented and concurrency-tested locally. Not deployed.</dd>
+                    <dd>
+                      {canonical
+                        ? "Implemented, concurrency-tested and running in production."
+                        : "Implemented and concurrency-tested locally. Not deployed."}
+                    </dd>
                   </div>
                 </dl>
               </details>
@@ -532,7 +575,7 @@ export default async function HomePage() {
             <a href="/source/FOUNDING-RELAY-PROTOCOL.md">
               <span>03</span>
               <strong>FOUNDING RELAY PROTOCOL</strong>
-              <em>IMPLEMENTED · NOT LIVE</em>
+              <em>{canonical ? "IMPLEMENTED · LIVE" : "IMPLEMENTED · NOT LIVE"}</em>
             </a>
             <a href="/source/PROPOSAL-AND-DELIBERATION-PROTOCOL.md">
               <span>04</span>
@@ -547,7 +590,7 @@ export default async function HomePage() {
             <a href="/source/DAY-1.md">
               <span>06</span>
               <strong>DAY 1 RECORD</strong>
-              <em>SHIPPED LOCALLY</em>
+              <em>{canonical ? "SHIPPED" : "SHIPPED LOCALLY"}</em>
             </a>
             <a href="/source/OURS-v0.1.md">
               <span>07</span>
@@ -619,8 +662,9 @@ export default async function HomePage() {
           <span>26 AUGUST 2026</span>
         </div>
         <p>
-          THIS IS A LOCAL TEST BUILD. NO CANONICAL ENTRY, LEGAL MEMBERSHIP, PUBLIC RESPONSE OR
-          OWNERSHIP IS CREATED HERE UNLESS THE LEDGER IS EXPLICITLY OPENED.
+          {canonical
+            ? "THIS IS THE CANONICAL FOUNDING LEDGER. AN ENTRY HERE IS A CHRONOLOGICAL PLACE - NOT LEGAL MEMBERSHIP, NOT OWNERSHIP, NOT A SHARE OR TOKEN."
+            : "THIS IS A LOCAL TEST BUILD. NO CANONICAL ENTRY, LEGAL MEMBERSHIP, PUBLIC RESPONSE OR OWNERSHIP IS CREATED HERE UNLESS THE LEDGER IS EXPLICITLY OPENED."}
         </p>
         <a href="#top">BACK TO ORIGIN ↑</a>
       </footer>

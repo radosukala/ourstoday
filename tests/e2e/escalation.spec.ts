@@ -156,6 +156,29 @@ test.describe("the escalated instrument", () => {
     expect(box?.height).toBeGreaterThanOrEqual(24);
   });
 
+  test("a live ledger never describes itself as a local test build", async ({ page }) => {
+    // This shipped to production and stayed wrong: the homepage said
+    // "SOURCE STATUS: LOCAL · TEST BUILD" and "NO CANONICAL ENTRY ... IS
+    // CREATED HERE" while a real person held #000001. On a site whose whole
+    // argument is that it tells the truth about itself, a stale self-
+    // description is the most visible lie available.
+    await page.goto("/");
+    const body = await page.locator("body").innerText();
+
+    expect(body).not.toMatch(/LOCAL · TEST BUILD/i);
+    expect(body).not.toMatch(/NO CANONICAL ENTRY[^.]*IS CREATED HERE/i);
+    expect(body).not.toMatch(/BUILT LOCALLY/i);
+    expect(body).not.toMatch(/Not deployed/i);
+    expect(body).not.toMatch(/IMPLEMENTED · NOT LIVE/i);
+
+    // And it says what IS true instead.
+    expect(body).toMatch(/PUBLIC · OPEN FOR ENTRY/i);
+    expect(body).toMatch(/CANONICAL FOUNDING LEDGER/i);
+
+    // The qualifier that must survive every state stays put.
+    expect(body).toMatch(/OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED/);
+  });
+
   test("the entry form treats a witness as optional, not as a lesser path", async ({ page }) => {
     await page.goto("/enter");
     // Nothing on the first step demands a witness or implies one is expected.
