@@ -34,6 +34,7 @@ const ALLOWLIST = new Set([
   "operations/SECRET-ROTATION.md",
   "operations/SUPPORT-AND-REVIEW.md",
   "operations/FORK-DRILL.md",
+  "operations/CONFORMANCE.md",
   // Receipts are the record of what was decided and by whom.
   "receipts/2026-08-26-build-receipt-0.1.md",
   "receipts/2026-08-26-vision-escalation-adoption.md",

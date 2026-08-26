@@ -7,10 +7,12 @@ import { getSql, toDate, type DbTimestamp } from "@/db/sqltype";
 import { Masthead } from "@/components/Masthead";
 import { MeActions } from "./MeActions";
 import { STATUS_LINE } from "@/legal/documents";
+import { memberRootFor } from "@/ledger/member-root";
 
 export const dynamic = "force-dynamic";
 
 interface EntryInfo {
+  entryId: string;
   ordinalLabel: string;
   displayName: string | null;
   publicStatus: string;
@@ -35,17 +37,19 @@ export default async function MePage() {
     try {
       const rows = await getSql().unsafe<
         {
+          id: string;
           ordinal: number;
           display_name: string | null;
           public_status: string;
           relay_state: string;
         }[]
       >(
-        "SELECT ordinal, display_name, public_status, relay_state FROM public.founding_ledger WHERE ordinal IN (SELECT ordinal FROM ledger.entry WHERE person_id = $1 AND lifecycle <> 'VOIDED')",
+        "SELECT e.id, f.ordinal, f.display_name, f.public_status, f.relay_state FROM public.founding_ledger f JOIN ledger.entry e ON e.ordinal = f.ordinal WHERE e.person_id = $1 AND e.lifecycle <> 'VOIDED'",
         [person.id],
       );
       if (rows[0]) {
         entry = {
+          entryId: rows[0].id,
           ordinalLabel: String(rows[0].ordinal).padStart(6, "0"),
           displayName: rows[0].display_name,
           publicStatus: rows[0].public_status,
@@ -124,7 +128,23 @@ export default async function MePage() {
                         : "NONE SEALED"}
                     </dd>
                   </div>
+                  {entry && (
+                    <div className="receipt-line">
+                      <dt>MEMBER ROOT</dt>
+                      <dd style={{ wordBreak: "break-all", fontSize: 11 }}>
+                        {memberRootFor(entry.entryId)}
+                      </dd>
+                    </div>
+                  )}
                 </div>
+                {entry && (
+                  <p className="neutral-note">
+                    YOUR MEMBER ROOT IS A STABLE IDENTIFIER DERIVED FROM YOUR ENTRY. IT IS NOT A
+                    PASSWORD AND IT AUTHORIZES NOTHING. IT IS HERE SO A CREDENTIAL YOU CONTROL CAN
+                    BE ROOTED IN YOUR FOUNDING ENTRY LATER, WITHOUT RENUMBERING ANYONE OR ASKING YOU
+                    TO ENTER AGAIN. IT IS NEVER PUBLIC AND NEVER SHOWN TO ANYONE ELSE.
+                  </p>
+                )}
                 {!entry && (
                   <p className="neutral-note">
                     YOU HAVE NOT SEALED AN ENTRY. AUTHENTICATION ALONE NEVER CREATES ONE.{" "}

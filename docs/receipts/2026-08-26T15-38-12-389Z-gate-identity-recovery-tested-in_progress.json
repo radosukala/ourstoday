@@ -1,0 +1,10 @@
+{
+  "receipt": "ours.steward-receipt/v1",
+  "kind": "gate-identity-recovery-tested-in_progress",
+  "at": "2026-08-26T15:38:12.389Z",
+  "gate": "identity-recovery-tested",
+  "state": "IN_PROGRESS",
+  "actor": "founder-steward",
+  "reason": "recovery path designed, not yet exercised by a person",
+  "evidenceUri": null
+}

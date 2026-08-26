@@ -15,13 +15,17 @@
  *   pnpm steward withdrawal <requestId> approve|reject --actor "..." --reason "..."
  *   pnpm steward void <ordinal>            --actor "..." --reason "..."
  *   pnpm steward mode OPEN|CLOSED|PAUSED   --actor "..." --reason "..."
+ *   pnpm steward gate <key> OPEN|IN_PROGRESS|MET|SLIPPED --actor "..." --reason "..." [--evidence <uri>]
+ *   pnpm steward deployed <commitRef>      --actor "..." --reason "..."
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { loadEnv } from "./env";
 
 interface Flags {
   actor?: string;
   reason?: string;
+  evidence?: string;
   yes: boolean;
 }
 
@@ -36,6 +40,9 @@ function parseFlags(argv: string[]): { positional: string[]; flags: Flags } {
     } else if (arg === "--reason") {
       const value = argv[++i];
       if (value !== undefined) flags.reason = value;
+    } else if (arg === "--evidence") {
+      const value = argv[++i];
+      if (value !== undefined) flags.evidence = value;
     } else if (arg === "--yes") {
       flags.yes = true;
     } else if (arg !== undefined) {
@@ -164,6 +171,77 @@ async function cmdVoid(ordinalArg: string | undefined, flags: Flags): Promise<vo
   console.info("receipt: " + file);
 }
 
+async function cmdGate(
+  key: string | undefined,
+  stateArg: string | undefined,
+  flags: Flags,
+): Promise<void> {
+  const state = (stateArg ?? "").toUpperCase();
+  if (!key || !["OPEN", "IN_PROGRESS", "MET", "SLIPPED"].includes(state)) {
+    throw new Error(
+      'Usage: steward gate <key> OPEN|IN_PROGRESS|MET|SLIPPED --actor "..." --reason "..." [--evidence <uri>]',
+    );
+  }
+  const { actor, reason } = requireAuthority(flags);
+  const { setGateState } = await import("../src/ledger/gates");
+  const gate = await setGateState({
+    key,
+    state: state as "OPEN" | "IN_PROGRESS" | "MET" | "SLIPPED",
+    actorLabel: actor,
+    reason,
+    evidenceUri: flags.evidence ?? null,
+  });
+  const file = await writeReceipt("gate-" + key + "-" + state.toLowerCase(), {
+    gate: key,
+    state,
+    actor,
+    reason,
+    evidenceUri: gate.evidenceUri,
+  });
+  console.info("Gate " + gate.key + " is now " + gate.state + ".");
+  console.info("This is now visible on /status, whichever way it moved.");
+  console.info("receipt: " + file);
+}
+
+/**
+ * Record a deployment as a constitutional act.
+ *
+ * "Our GitHub is public" and "the binary serving you is provably that code"
+ * are separated by exactly this event. Appending the commit and the applied
+ * migration set makes a deploy something the record can be checked against.
+ */
+async function cmdDeployed(commitRef: string | undefined, flags: Flags): Promise<void> {
+  if (!commitRef?.trim())
+    throw new Error("Usage: steward deployed <commitRef> --actor ... --reason ...");
+  const { actor, reason } = requireAuthority(flags);
+  const { getSql } = await import("../src/db/client");
+  const { appendCanonicalEvent } = await import("../src/ledger/append");
+  const applied = await getSql().unsafe<{ filename: string }[]>(
+    "SELECT filename FROM _meta.schema_migrations ORDER BY filename",
+  );
+  const environment = process.env.APP_ENV ?? "local";
+  await getSql().begin(async (tx) => {
+    await appendCanonicalEvent(tx, {
+      type: "build.deployed",
+      actorType: actor.toUpperCase().includes("FOUNDER") ? "FOUNDER_STEWARD" : "STEWARD",
+      actorRef: actor,
+      subjectType: "build",
+      subjectRef: commitRef,
+      authorityRef: "ours.vision-escalation/0.1",
+      privacyClass: "PUBLIC",
+      payload: {
+        commitRef,
+        environment,
+        migrations: applied.map((m) => m.filename),
+        reason,
+      },
+    });
+  });
+  const file = await writeReceipt("build-deployed", { commitRef, environment, actor, reason });
+  console.info("Recorded build.deployed for " + commitRef + " in " + environment + ".");
+  console.info("receipt: " + file);
+}
+
 async function cmdMode(targetArg: string | undefined, flags: Flags): Promise<void> {
   const target = (targetArg ?? "").toUpperCase();
   if (target !== "OPEN" && target !== "CLOSED" && target !== "PAUSED") {
@@ -189,6 +267,9 @@ async function cmdMode(targetArg: string | undefined, flags: Flags): Promise<voi
 }
 
 async function main(): Promise<void> {
+  // Read .env.local the way Next does, so steward commands work from a plain
+  // shell instead of requiring a hand-exported environment block.
+  loadEnv();
   const { positional, flags } = parseFlags(process.argv.slice(2));
   const [command, ...rest] = positional;
   switch (command) {
@@ -206,6 +287,10 @@ async function main(): Promise<void> {
       return cmdVoid(rest[0], flags);
     case "mode":
       return cmdMode(rest[0], flags);
+    case "gate":
+      return cmdGate(rest[0], rest[1], flags);
+    case "deployed":
+      return cmdDeployed(rest[0], flags);
     default:
       console.info(
         [
@@ -218,6 +303,8 @@ async function main(): Promise<void> {
           '  pnpm steward withdrawal <requestId> approve|reject --actor "..." --reason "..."',
           '  pnpm steward void <ordinal> --actor "..." --reason "..."',
           '  pnpm steward mode OPEN|CLOSED|PAUSED --actor "..." --reason "..." [--yes]',
+          '  pnpm steward gate <key> OPEN|IN_PROGRESS|MET|SLIPPED --actor "..." --reason "..." [--evidence <uri>]',
+          '  pnpm steward deployed <commitRef> --actor "..." --reason "..."',
           "",
           "There is no command that edits a canonical event. Corrections append.",
         ].join("\n"),

@@ -1,0 +1,9 @@
+{
+  "receipt": "ours.steward-receipt/v1",
+  "kind": "build-deployed",
+  "at": "2026-08-26T15:38:32.879Z",
+  "commitRef": "9ffe7143ad48cb42878d9a39f21b8c25312fadea",
+  "environment": "local",
+  "actor": "founder-steward",
+  "reason": "local build receipt; nothing is deployed externally"
+}

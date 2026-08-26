@@ -71,8 +71,9 @@ GHSA-67mh-4wv8-2f99. `pnpm audit --prod` reports no known vulnerabilities.
 | `lint` | PASS |
 | `typecheck` | PASS |
 | `test:unit` | PASS — 25 tests |
-| `test:integration` | PASS — 17 tests, real PostgreSQL |
-| `test:e2e` | PASS — 10 tests, real browser, real database, canonical writes open in a disposable database |
+| `test:integration` | PASS — 30 tests, real PostgreSQL |
+| `test:e2e` | PASS — 17 tests, real browser, real database, canonical writes open in a disposable database |
+| `conformance check` | PASS — 10 invariants against a real database |
 | `build` | PASS |
 | `db:migrate:check` | PASS — 4 migrations, 22 tables on an empty database |
 | `db:restore:verify` | PASS — dump, clean restore, digest chain recomputed, append-only trigger still enforced after restore |
@@ -116,6 +117,41 @@ Two `package.json` scripts referenced files that did not exist
 (`scripts/steward.ts`, `scripts/security/secret-scan.ts`); both are now written
 and exercised.
 
+Two more were found while implementing the escalation:
+
+11. **`SELECT seq::text AS seq ... ORDER BY seq` sorts lexicographically.**
+    PostgreSQL resolves a bare `ORDER BY` identifier to the *output* column, so
+    the log came back as 1, 10, 2, 3. Every chain walk and every Merkle root
+    would have been computed over a reordered log — silently, and never in a
+    test small enough to notice. Found in five queries. The event schema
+    standard documents the hazard, because any reimplementation can make it.
+12. **Anchor verification could never pass.** It recomputed the root over the
+    calendar period, but publishing an anchor appends `anchor.published` to
+    that same period. Verification now uses the sequence range the root
+    actually committed to.
+
+## What the escalation added
+
+Adopted by the founder-steward on 26 August 2026 and receipted separately:
+
+- **Witness attestation** — an entry may name an existing entry that attests
+  it is a person. The witness receives nothing, and an entrant who names
+  nobody enters identically. The graph's *shape* is published as a degree
+  distribution; its edges are never a dataset.
+- **Anchors** — Merkle roots over the canonical log, append-only, refusing to
+  publish over a chain that does not reproduce. `/anchors` describes the
+  construction in enough detail to reimplement from the page alone.
+- **Conformance** — ten invariants, appended pass or fail, with no suppression
+  path. `/status` shows the last run.
+- **Live launch gates** — the sixteen gates are rows with required evidence and
+  a named blocker. `MET` without an evidence URI is refused. One is met.
+- **`ours-fork`** — the complete public state, verifiable offline against two
+  proven tamper cases.
+- **Member root** — a derived, stable identifier, so a credential can be rooted
+  in a founding entry later without renumbering or reissuing anything.
+- **Reserved event types** — `treasury.*` and `instrument.*`, refused at the
+  append path.
+
 ## Milestones
 
 | | Status |
@@ -126,6 +162,7 @@ and exercised.
 | D — relay and First Continuation | COMPLETE (was never exercised; now verified end to end) |
 | E — rights and stewardship | COMPLETE |
 | F — operations and hardening | COMPLETE |
+| Vision Escalation 0.1 (section 14) | COMPLETE — see the [adoption receipt](./2026-08-26-vision-escalation-adoption.md) |
 | G — external preview | **NOT STARTED — requires a new human approval** |
 | H — canonical launch | **NOT STARTED — separate founder-steward decision** |
 
@@ -154,7 +191,12 @@ monitoring, no off-site backup target.
   No third-party origin is permitted; this is the one relaxation.
 - **Backups do not exist.** The restore rehearsal passes against a local dump.
   A rehearsal is not a backup.
-- All twelve human decisions in handoff section 16 remain open. Decisions 2
+- **No anchor has left this database.** The mechanism ships; no paper
+  deposit exists, so the archive is a capability rather than a record. Volume
+  one has to start somewhere, and it has not started.
+- **The Fork Drill has never been performed by anyone but the build.** No
+  named non-founder operator, no drill, no receipt.
+- All thirteen human decisions in handoff section 16 remain open. Decisions 2
   (legal controller), 6 (retention), 7 (incident owner and support contact) and
   12 (licensed review) each block canonical launch on their own.
 

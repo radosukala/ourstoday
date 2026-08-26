@@ -1,113 +1,161 @@
 # OURS TODAY
 
 > **THE NETWORK IS OURS. EVERYTHING ELSE CAN BE BUILT.**
+>
+> **The record cannot be bought into. Not now, not later, not by us.**
 
 OURS is a member-owned network that builds its own software in public.
 
-This repository contains the Day 1 founding instrument and the source package
-that governs its next builds.
-
-**Day 1:** 26 August 2026  
-**Current ownership status:** COMMITTED  
-**Legal membership:** NOT YET ISSUED  
+**Day 1:** 26 August 2026
+**Ownership status:** COMMITTED · **Legal membership:** NOT YET ISSUED
 **Canonical intended domain:** `ourstoday.com`
 
-## Open locally
+---
 
-The site has no build step or dependencies.
+## Truthful status
 
-```text
-python3 -m http.server 4173
+**This runs locally. Nothing is deployed.** No Git remote, no hosting, no
+database outside a developer's machine, no domain, no email sending domain.
+Current external cost: **0.00 EUR**.
+
+Canonical writes are closed behind two independent gates and stay closed until
+a founder-steward readiness receipt is published. Passing tests is not
+authorization to open them.
+
+**One of sixteen launch gates is met.** The live list, with the evidence each
+one requires and the named human decision blocking it, is at `/status`.
+
+---
+
+## What works today
+
+A person can, against a real PostgreSQL database:
+
+1. read the founding declaration and the current legal status before giving
+   anything;
+2. verify control of an email address with a magic link whose token lives in
+   the URL fragment, so a mail scanner that fetches the link authenticates
+   nobody;
+3. choose a public name or pseudonym, optionally name a **witness** who
+   attests they are a person and receives nothing for it, accept the exact
+   document versions, and seal;
+4. receive a number assigned inside the committed transaction and not one
+   moment earlier, plus a **member root** — a stable identifier that
+   authorizes nothing and exists so a credential they control can be rooted
+   here later;
+5. carry a relay, or not. Someone entering through it records lineage, and
+   exactly one successor becomes that place's **First Continuation**;
+6. export their own records, request a name correction, request withdrawal.
+
+A steward can, from the command line, work the review queue, resolve a
+correction or withdrawal, void an entry after review, move a launch gate,
+record a deployment, publish an anchor, and pause or open canonical writes —
+each naming a human actor and a reason, each appending a receipted event in
+the same transaction as the change.
+
+Anyone can take the whole public record and check it without us.
+
+---
+
+## Run it
+
+Requires Node 22.12+, pnpm and a local PostgreSQL 16+.
+
+```bash
+pnpm install
+cp .env.example .env.local     # fill in local values
+pnpm db:migrate
+pnpm db:seed:local             # the declared origin row, as LOCAL CONCEPT DATA
+pnpm dev
 ```
 
-Then open `http://127.0.0.1:4173/`.
+## Commands
 
-The Content Security Policy blocks network requests. Entry and proposal
-interactions save private drafts only in the current browser. They do not issue
-a canonical ledger number, submit a response, create legal membership or grant
-ownership.
+| | |
+|---|---|
+| `pnpm steward` | review queue, corrections, withdrawals, gates, write-gate transitions |
+| `pnpm conformance check` | run the ten invariants and print |
+| `pnpm conformance run` | run them and **append the result, pass or fail** |
+| `pnpm anchor publish DAILY --actor "..."` | publish a Merkle root over the canonical log |
+| `pnpm fork export` | the complete public state, schema and governing documents |
+| `pnpm fork verify <dir>` | recompute the chain and every root **offline** |
+| `pnpm db:restore:verify` | dump, restore clean, recompute the chain, prove append-only survived |
+| `pnpm security:audit` | dependency advisories plus a committed-secret tripwire |
+
+Release gates: `format:check` · `lint` · `typecheck` · `test:unit` ·
+`test:integration` · `test:e2e` · `build` · `db:migrate:check` ·
+`db:restore:verify` · `security:audit`.
+
+## Leaving
+
+```bash
+pnpm fork export && pnpm fork verify ./fork-export
+```
+
+Verification needs no database, no network and no permission from OURS. That is
+the point: an export you have to trust us about is not an export. The quarterly
+[Fork Drill](docs/operations/FORK-DRILL.md) is performed by someone who is not
+the founder-steward, and if it fails, the ledger does not open.
+
+---
 
 ## Source package
+
+**Governing**
 
 - [Founding direction v0.2](docs/OURS.md)
 - [Founding Constitution 0.1](docs/CONSTITUTION-0.1.md)
 - [Founding Relay Protocol](docs/FOUNDING-RELAY-PROTOCOL.md)
+- [**Event Schema 1.0**](docs/EVENT-SCHEMA-1.0.md) — published standard; a
+  breaking change to it is a constitutional amendment
 - [Proposal and Deliberation Protocol](docs/PROPOSAL-AND-DELIBERATION-PROTOCOL.md)
 - [Agent Build Contract](docs/AGENT-BUILD-CONTRACT.md)
 - [Day 1 record](docs/DAY-1.md)
+
+**Direction and build**
+
 - [Founding Ledger backend build handoff](docs/FOUNDING-LEDGER-BUILD-HANDOFF.md)
-- [Copy-ready prompt for the next coding session](docs/FOUNDING-LEDGER-NEXT-SESSION-PROMPT.md)
+- [Vision Escalation 0.1](docs/OURS-VISION-ESCALATION-0.1.md) — proposal, as
+  written
+- [Vision Escalation adoption receipt](docs/receipts/2026-08-26-vision-escalation-adoption.md)
+  — what was adopted, what was not, and why
+- [Build receipt 0.1](docs/receipts/2026-08-26-build-receipt-0.1.md)
 
-These documents explicitly distinguish:
+**Operations** — published with their unanswered questions intact, because
+those questions are the point
 
-- adopted decisions;
-- constitutional commitments;
-- hypotheses;
-- future decisions;
-- concept data;
-- observed evidence.
+- [Data map](docs/operations/DATA-MAP.md) — every field stored, its class, its
+  retention
+- [Privacy notice draft](docs/operations/PRIVACY-NOTICE-DRAFT.md) — seven gaps
+  block publication
+- [Conformance](docs/operations/CONFORMANCE.md) ·
+  [Fork Drill](docs/operations/FORK-DRILL.md) ·
+  [Pause the ledger](docs/operations/PAUSE-LEDGER.md) ·
+  [Incident](docs/operations/INCIDENT.md) ·
+  [Backup and restore](docs/operations/BACKUP-RESTORE.md) ·
+  [Migrations](docs/operations/MIGRATIONS.md) ·
+  [Deploy](docs/operations/DEPLOY.md) ·
+  [Email deliverability](docs/operations/EMAIL-DELIVERABILITY.md) ·
+  [Secret rotation](docs/operations/SECRET-ROTATION.md) ·
+  [Support and review](docs/operations/SUPPORT-AND-REVIEW.md)
 
-## Homepage
+**Prehistory**
 
-The Day 1 homepage is a working civic instrument rather than a SaaS landing
-page.
-It contains:
+- [Founding direction v0.1](docs/OURS-v0.1.md) (superseded)
+- `archive/day-1-static-v0.2/` — the Day 1 static instrument, unchanged, and
+  the rollback target
+- `archive/mission-market-v0.1/`
 
-- the founding declaration;
-- the origin ledger record;
-- an honest local entry-draft preview;
-- Formation Tape;
-- Build Tape;
-- Constitution Diff;
-- proposal P-0001 and the six structured response types;
-- direct access to every governing document.
+---
 
-The local entry form intentionally copies only an **intention**. It cannot
-generate social copy falsely claiming that a canonical entry was sealed.
+## What this is not
 
-## Files
+A Founding Ledger entry is not a share, a security, a token, an ownership
+certificate, a legal member register or a promise of profit. No number is
+reserved, previewed, sold, transferred or reassigned. A verified entrant keeps
+their place without recruiting anyone. Referral count creates no vote,
+ownership or economic right. There is no follower count, no like and no
+popularity measure — not because they are hidden, but because they are not
+fields.
 
-```text
-index.html                                      Day 1 instrument
-assets/styles.css                               visual and responsive system
-assets/app.js                                   private local draft interactions
-assets/og.png                                   1200 x 630 founding share image
-docs/OURS.md                                    adopted direction v0.2
-docs/CONSTITUTION-0.1.md                        operative project charter
-docs/FOUNDING-RELAY-PROTOCOL.md                 entry and relay mechanics
-docs/PROPOSAL-AND-DELIBERATION-PROTOCOL.md      proposal and external-discussion mechanics
-docs/AGENT-BUILD-CONTRACT.md                    prompt, authority and receipt format
-docs/DAY-1.md                                   Day 1 decision/build record
-docs/FOUNDING-LEDGER-BUILD-HANDOFF.md           backend architecture and implementation plan
-docs/FOUNDING-LEDGER-NEXT-SESSION-PROMPT.md     copy-ready coding-session prompt
-```
-
-## Prehistory and reversibility
-
-The earlier Mission Market was preserved rather than erased:
-
-- [Founding direction v0.1](docs/OURS-v0.1.md)
-- [Mission Market design proposal](docs/mission-market.html)
-- `archive/mission-market-v0.1/` — the previous multi-file homepage
-
-Version 0.1 contains reusable cell, migration, commitment, economics and
-governance work. It is superseded as the first public experience, not presented
-as a public failure.
-
-## Production boundary
-
-Before the canonical Founding Ledger can open, the project still needs:
-
-- legal and privacy review;
-- a public/private data map;
-- identity verification and recovery;
-- transactional number allocation and idempotency;
-- signed relays and atomic First Continuation;
-- abuse review and appeal;
-- correction, withdrawal and export;
-- backups and tested recovery;
-- monitoring, support and an incident owner;
-- an explicit production-readiness receipt.
-
-The acceptance matrix is in the
-[Founding Relay Protocol](docs/FOUNDING-RELAY-PROTOCOL.md#16-acceptance-tests).
+Success looks like being as boring as a land registry, and as hard to delete.
