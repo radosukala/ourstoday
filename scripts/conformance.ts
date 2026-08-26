@@ -12,7 +12,7 @@
  * most expensive line anyone could contribute to this repository.
  */
 import { execFileSync } from "node:child_process";
-import { loadEnv, notRun, requireDatabaseUrl } from "./env";
+import { announceTarget, loadEnv, notRun, requireDatabaseUrl, takeProfile } from "./env";
 
 function commitRef(): string | null {
   try {
@@ -48,8 +48,10 @@ function render(result: {
 }
 
 async function main(): Promise<void> {
-  loadEnv();
-  const command = process.argv[2] ?? "check";
+  const { argv, profile } = takeProfile(process.argv.slice(2));
+  loadEnv(profile);
+  const command = argv[0] ?? "check";
+  if (command === "run") announceTarget("conformance run");
 
   if (command === "history") {
     requireDatabaseUrl("conformance history");

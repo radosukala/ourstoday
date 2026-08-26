@@ -19,7 +19,7 @@
  * --location, because an archive nobody can find is not an archive. This
  * command cannot do that part; a human must, and then say where it went.
  */
-import { loadEnv, requireDatabaseUrl } from "./env";
+import { announceTarget, loadEnv, requireDatabaseUrl, takeProfile } from "./env";
 
 type Kind = "DAILY" | "MONTHLY" | "ANNUAL";
 
@@ -59,8 +59,10 @@ function asKind(value: string | undefined): Kind {
 }
 
 async function main(): Promise<void> {
-  loadEnv();
-  const { positional, flags } = parse(process.argv.slice(2));
+  const { argv, profile } = takeProfile(process.argv.slice(2));
+  loadEnv(profile);
+  const { positional, flags } = parse(argv);
+  if (positional[0] === "publish") announceTarget("anchor publish");
   const [command, ...rest] = positional;
 
   if (command === "list") {

@@ -1,0 +1,9 @@
+{
+  "receipt": "ours.steward-receipt/v1",
+  "kind": "build-deployed",
+  "at": "2026-08-26T17:33:37.809Z",
+  "commitRef": "6000d2b",
+  "environment": "local",
+  "actor": "founder-steward",
+  "reason": "first production deployment of ourstoday.com"
+}

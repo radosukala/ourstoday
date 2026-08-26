@@ -20,7 +20,7 @@
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { loadEnv } from "./env";
+import { announceTarget, loadEnv, takeProfile } from "./env";
 
 interface Flags {
   actor?: string;
@@ -269,8 +269,12 @@ async function cmdMode(targetArg: string | undefined, flags: Flags): Promise<voi
 async function main(): Promise<void> {
   // Read .env.local the way Next does, so steward commands work from a plain
   // shell instead of requiring a hand-exported environment block.
-  loadEnv();
-  const { positional, flags } = parseFlags(process.argv.slice(2));
+  const { argv, profile } = takeProfile(process.argv.slice(2));
+  loadEnv(profile);
+  const { positional, flags } = parseFlags(argv);
+  if (positional[0] && !["status", "queue", "receipt"].includes(positional[0])) {
+    announceTarget("steward " + positional[0]);
+  }
   const [command, ...rest] = positional;
   switch (command) {
     case "status":

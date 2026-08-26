@@ -33,10 +33,33 @@ function parse(contents: string): Record<string, string> {
   return out;
 }
 
-/** Load .env.local then .env, without overriding anything already exported. */
-export function loadEnv(): void {
+/**
+ * Load .env.local then .env, without overriding anything already exported.
+ *
+ * Pass "production" to load `.env.production.local` FIRST and let it win. That
+ * file is gitignored and holds the production connection; selecting it is an
+ * explicit act (`--production` on a command), never something inherited from
+ * a shell that happens to have variables exported.
+ */
+export function loadEnv(profile?: "production"): void {
   if (loaded) return;
   loaded = true;
+  if (profile === "production") {
+    const full = path.join(process.cwd(), ".env.production.local");
+    if (!existsSync(full)) {
+      console.error(
+        "--production requires .env.production.local, which is missing.\n" +
+          "Create it (it is gitignored) with the production DATABASE_URL,\n" +
+          "DIRECT_DATABASE_URL and RELAY_SIGNING_SECRET.",
+      );
+      process.exit(1);
+    }
+    // An explicitly chosen profile overrides an ambient environment, because
+    // otherwise a stale exported variable silently wins over the flag.
+    for (const [key, value] of Object.entries(parse(readFileSync(full, "utf8")))) {
+      process.env[key] = value;
+    }
+  }
   for (const file of [".env.local", ".env"]) {
     const full = path.join(process.cwd(), file);
     if (!existsSync(full)) continue;
@@ -44,6 +67,45 @@ export function loadEnv(): void {
       if (process.env[key] === undefined) process.env[key] = value;
     }
   }
+}
+
+/**
+ * Pull `--production` out of an argument list.
+ *
+ * Selecting the target must be part of the command, not part of the shell
+ * around it. Three separate operations have already landed in the wrong
+ * database because the target lived in an exported variable nobody could see
+ * at the moment of running.
+ */
+export function takeProfile(argv: string[]): {
+  argv: string[];
+  profile: "production" | undefined;
+} {
+  const rest = argv.filter((a) => a !== "--production" && a !== "--prod");
+  return {
+    argv: rest,
+    profile: rest.length === argv.length ? undefined : "production",
+  };
+}
+
+/**
+ * Say out loud which database is about to be written to.
+ *
+ * A command that writes and does not name its target is indistinguishable
+ * from the same command pointed somewhere else, and the difference only shows
+ * up later when someone checks the wrong system for the result.
+ */
+export function announceTarget(command: string): void {
+  const url = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL ?? "";
+  let host = "(unset)";
+  try {
+    host = new URL(url).hostname || "(socket)";
+  } catch {
+    host = url ? "(non-URL form)" : "(unset)";
+  }
+  const local =
+    host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "(socket)";
+  console.info(command + " → " + host + (local ? "  [LOCAL]" : "  [REMOTE]"));
 }
 
 /**
