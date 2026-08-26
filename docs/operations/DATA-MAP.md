@@ -130,8 +130,13 @@ Never public. Reachable by the person themselves through
 
 ### Public projections
 
-`public.founding_ledger` and `public.system_status` are the only allowlisted
-public reads. They expose ordinal, display name (or a withdrawn tombstone),
+`public.participation_totals` and `public.participation_daily` aggregate the
+ledger and contain no per-person column - the projection test asserts that
+directly, because an aggregate that acquires an identifier stops being a count
+of what happened and becomes a measurement of individuals.
+
+`public.founding_ledger` and `public.system_status` are the allowlisted
+per-entry public reads. They expose ordinal, display name (or a withdrawn tombstone),
 entry time, predecessor ordinal, relay state, First Continuation ordinal,
 public status, document versions and the constant
 `legal_membership_status = 'NOT YET ISSUED'`. No column joins to `private` or
@@ -147,7 +152,8 @@ Recording an absence is part of the map:
 - no plaintext relay token, only a digest of its id;
 - no plaintext magic-link token, only a hash;
 - no second copy of an email address in `private` or `ledger`;
-- no analytics, advertising or third-party script (CSP `default-src 'none'`,
+- no analytics, advertising, visitor measurement or third-party script (CSP
+  `default-src 'none'`,
   `connect-src 'self'`);
 - no referral count, follower count, like or vote — these are not fields,
   because a field is a claim that something is being counted;

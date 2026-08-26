@@ -70,6 +70,16 @@ describe("safe public projections", () => {
       expect(names.some((n) => n.includes(forbidden))).toBe(false);
     }
 
+    // Participation is aggregate BY CONSTRUCTION. If a per-person column ever
+    // appears in it, the thing stops being a count of what happened and
+    // becomes a measurement of individuals.
+    const participation = await rawQuery<{ column_name: string }>(
+      "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name IN ('participation_totals', 'participation_daily')",
+    );
+    for (const row of participation) {
+      expect(row.column_name).not.toMatch(/ordinal|display_name|person|entry_id|email|ip|agent/i);
+    }
+
     // Every public view, not just this one: a new projection is precisely
     // where a private column arrives without anyone deciding to publish it.
     const allPublic = await rawQuery<{ table_name: string; column_name: string }>(

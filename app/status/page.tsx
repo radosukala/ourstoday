@@ -3,6 +3,7 @@ import { foundingState } from "@/ledger/state";
 import { readGates, type GateSummary } from "@/ledger/gates";
 import { listConformanceRuns, type ConformanceRunRow } from "@/ledger/conformance";
 import { listAnchors, type AnchorRow } from "@/ledger/anchor";
+import { readParticipation } from "@/ledger/participation";
 import { getSql } from "@/db/sqltype";
 import { STATUS_LINE } from "@/legal/documents";
 import type { Metadata } from "next";
@@ -69,12 +70,13 @@ function ago(date: Date): string {
 export default async function StatusPage() {
   // Every panel degrades independently: a status page that 500s because one
   // projection is unavailable is the opposite of a status page.
-  const [state, c, gates, runs, anchors] = await Promise.all([
+  const [state, c, gates, runs, anchors, participation] = await Promise.all([
     foundingState(),
     counts(),
     readGates().catch((): GateSummary | null => null),
     listConformanceRuns(5).catch((): ConformanceRunRow[] => []),
     listAnchors(5).catch((): AnchorRow[] => []),
+    readParticipation().catch(() => null),
   ]);
 
   const modeLabel =
@@ -241,6 +243,56 @@ export default async function StatusPage() {
               </ol>
             </>
           )}
+        </section>
+
+        <section className="page-shell" aria-labelledby="participation-title">
+          <div className="section-heading compact-heading">
+            <div>
+              <p className="eyebrow">PARTICIPATION · FROM THE LEDGER</p>
+              <h2 id="participation-title">
+                Counted from what people did, not from watching them.
+              </h2>
+            </div>
+            <p className="protocol-note">
+              No script runs in your browser, so nothing about you is measured. These come from
+              entries people sealed, and anyone with an export can recompute them.
+            </p>
+          </div>
+          {participation === null ? (
+            <p className="neutral-note">PARTICIPATION IS UNAVAILABLE IN THIS ENVIRONMENT.</p>
+          ) : (
+            <dl className="status-grid">
+              <div className="status-cell">
+                <dt>ENTRIES</dt>
+                <dd>{participation.totals.entries}</dd>
+              </div>
+              <div className="status-cell">
+                <dt>ARRIVED THROUGH A RELAY</dt>
+                <dd>{participation.totals.relayArrivals}</dd>
+              </div>
+              <div className="status-cell">
+                <dt>FIRST CONTINUATIONS</dt>
+                <dd>{participation.totals.firstContinuations}</dd>
+              </div>
+              <div className="status-cell">
+                <dt>WITNESSED ENTRIES</dt>
+                <dd>{participation.totals.witnessedEntries}</dd>
+              </div>
+              <div className="status-cell">
+                <dt>PLACES CONTINUED</dt>
+                <dd>{participation.totals.placesContinued}</dd>
+              </div>
+              <div className="status-cell">
+                <dt>WITHDRAWN OR VOIDED</dt>
+                <dd>{participation.totals.withdrawnOrVoided}</dd>
+              </div>
+            </dl>
+          )}
+          <p className="status-note">
+            THERE IS NO VISITOR COUNT HERE AND THERE IS NOTHING TO ADD. THE CONTENT SECURITY POLICY
+            BLOCKS EVERY EXTERNAL ORIGIN, SO NO ANALYTICS SCRIPT COULD LOAD EVEN IF ONE WERE ADDED.
+            RAW NUMBERS: <a href="/api/v1/participation">/api/v1/participation</a>
+          </p>
         </section>
 
         <section className="page-shell" aria-labelledby="anchor-status-title">

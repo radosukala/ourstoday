@@ -179,6 +179,42 @@ test.describe("the escalated instrument", () => {
     expect(body).toMatch(/OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED/);
   });
 
+  test("participation is published without any visitor being measured", async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    await page.goto("/status");
+    await expect(
+      page.getByRole("heading", { name: /counted from what people did/i }),
+    ).toBeVisible();
+
+    // The counts come from the ledger, and the API is public so anyone can
+    // check them against their own export.
+    const res = await request.get(baseURL + "/api/v1/participation");
+    expect(res.status()).toBe(200);
+    const body = (await res.json()) as {
+      totals: Record<string, unknown>;
+      daily: unknown[];
+      note: string;
+    };
+    expect(typeof body.totals.entries).toBe("number");
+    expect(Array.isArray(body.daily)).toBe(true);
+    // Aggregate only: an ordinal or a name here would make it a measurement
+    // of individuals rather than a count of what happened.
+    expect(JSON.stringify(body.totals)).not.toMatch(/ordinal|displayName|person|email/i);
+
+    // And the promise the whole approach rests on: nothing third-party loads.
+    const external: string[] = [];
+    page.on("request", (r) => {
+      const url = new URL(r.url());
+      if (url.host !== new URL(baseURL as string).host) external.push(url.host);
+    });
+    await page.goto("/");
+    await page.goto("/status");
+    expect(external, "third-party requests: " + external.join(", ")).toEqual([]);
+  });
+
   test("the entry form treats a witness as optional, not as a lesser path", async ({ page }) => {
     await page.goto("/enter");
     // Nothing on the first step demands a witness or implies one is expected.

@@ -42,7 +42,14 @@ Full field-level detail is in [DATA-MAP.md](./DATA-MAP.md).
 ## What is deliberately not collected
 
 No password. No tracking. No analytics. No advertising. No third-party script —
-the content security policy blocks every external origin. No follower count, no
+the content security policy blocks every external origin. Nothing runs in your
+browser that reports back, so we do not know you were here.
+
+We do publish **participation** numbers on `/status`: how many people have
+entered, how many arrived through someone's relay, how many places have been
+continued. Those are counted from entries people deliberately sealed, all of
+which are already public on the ledger. They measure what the record contains,
+never who looked at it, and you appear in them only if you chose to enter. No follower count, no
 likes, no referral count: those are not fields here, because a field is a claim
 that something is being counted.
 

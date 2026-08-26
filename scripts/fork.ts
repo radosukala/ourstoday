@@ -139,6 +139,8 @@ async function cmdExport(outDir: string): Promise<void> {
     ["gates.json", "SELECT * FROM public.launch_gates"],
     ["conformance.json", "SELECT * FROM public.conformance"],
     ["witness-shape.json", "SELECT * FROM public.witness_shape"],
+    ["participation-totals.json", "SELECT * FROM public.participation_totals"],
+    ["participation-daily.json", "SELECT * FROM public.participation_daily"],
     ["system-status.json", "SELECT * FROM public.system_status"],
   ];
   for (const [file, query] of views) {
@@ -180,6 +182,7 @@ async function cmdExport(outDir: string): Promise<void> {
       "gates.json — the sixteen launch gates and their state",
       "conformance.json — every conformance run, pass and fail",
       "witness-shape.json — the attestation degree distribution (never the edges)",
+      "participation-*.json — the participation counts OURS publishes, recomputable from events.json",
       "schema/ — the SQL that builds the tables and the public views",
       "docs/ — the event schema standard and the governing documents",
     ],
