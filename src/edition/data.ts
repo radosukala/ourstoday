@@ -1,20 +1,27 @@
-import { readParticipation } from "@/ledger/participation";
 import { readGates } from "@/ledger/gates";
 import { foundingState } from "@/ledger/state";
-import { formationTape, newestPublicEntry } from "@/ledger/queries";
-import { getSql } from "@/db/sqltype";
-import type { EditionInputs } from "./compose";
+import {
+  entryStatsForWindow,
+  formationTape,
+  newestPublicEntryInWindow,
+  totalEntriesBefore,
+} from "@/ledger/queries";
+import { dayToDateUtc, latestReportableDay, type EditionInputs } from "./compose";
 
 /**
- * Gather the edition's inputs from the same public projections the rest of
- * the site reads. Each source degrades independently to null so one
- * unavailable projection produces an honest UNAVAILABLE line, not a failed
- * edition — the daily page publishing through an incident is the point of
- * having one.
+ * Gather one edition's inputs. FORMED and BUILT are computed for the
+ * reported UTC day from the ledger itself, so every past edition is
+ * recomputable in any environment — the log is the archive, nothing is
+ * stored twice. NOT YET and OPEN are live lines by nature: what is not yet
+ * true is always evaluated now, never replayed.
+ *
+ * Each source degrades independently to null so one unavailable projection
+ * produces an honest UNAVAILABLE line, not a failed edition — the daily page
+ * publishing through an incident is the point of having one.
  */
 
 /** Receipt-bearing event types shown on the BUILT line. Entry and relay
- *  events belong to FORMED and are counted there via participation. */
+ *  events belong to FORMED and are counted there from the ledger. */
 const BUILT_EVENT_TYPES = new Set([
   "build.deployed",
   "ledger.gate.changed",
@@ -24,47 +31,45 @@ const BUILT_EVENT_TYPES = new Set([
   "ledger.system_state.changed",
 ]);
 
+export class EditionRangeError extends Error {}
+
 /**
- * The participation projection arrived in migration 0007; an environment can
- * run newer code against a database that predates it. The older system_status
- * view still answers "how many entries", so the FORMED line keeps its total
- * instead of going dark for the whole edition.
+ * Inputs for the edition of `day` (defaults to the latest completed day —
+ * the morning edition reports yesterday). Throws EditionRangeError for a day
+ * that has not completed yet or predates Day 1.
  */
-async function entryCountFallback(): Promise<{ entries: number } | null> {
-  try {
-    const rows = await getSql().unsafe<{ entry_count: number }[]>(
-      "SELECT entry_count FROM public.system_status",
+export async function loadEditionInputs(
+  day?: number,
+  now: Date = new Date(),
+): Promise<EditionInputs> {
+  const latest = latestReportableDay(now);
+  const reportedDay = day ?? latest;
+  if (!Number.isInteger(reportedDay) || reportedDay < 1 || reportedDay > latest) {
+    throw new EditionRangeError(
+      `Editions exist for days 1 to ${latest}; day ${String(day)} has no completed record.`,
     );
-    return rows[0] ? { entries: rows[0].entry_count } : null;
-  } catch {
-    return null;
   }
-}
 
-export async function loadEditionInputs(now: Date = new Date()): Promise<EditionInputs> {
-  const dateUtc = now.toISOString().slice(0, 10);
+  const dateUtc = dayToDateUtc(reportedDay);
+  const startIso = dateUtc + "T00:00:00.000Z";
+  const endIso = dayToDateUtc(reportedDay + 1) + "T00:00:00.000Z";
 
-  const [participation, newest, gates, state, tape] = await Promise.all([
-    readParticipation().catch(() => null),
-    newestPublicEntry().catch(() => null),
+  const [stats, total, newest, gates, state, tape] = await Promise.all([
+    entryStatsForWindow(startIso, endIso).catch(() => null),
+    totalEntriesBefore(endIso).catch(() => null),
+    newestPublicEntryInWindow(startIso, endIso).catch(() => null),
     readGates().catch(() => null),
     foundingState().catch(() => null),
-    // The tape returns the latest 50 PUBLIC events; on a day with more events
-    // than that, older same-day receipts fall off the BUILT line. They remain
-    // in the canonical log — the edition is a summary, not the record.
-    formationTape(50).catch(() => null),
+    // The tape returns the latest 200 PUBLIC events; a reported day whose
+    // receipts have scrolled past that window shows fewer than it had. They
+    // remain in the canonical log — the edition is a summary, not the record.
+    formationTape(200).catch(() => null),
   ]);
 
   return {
     dateUtc,
-    totals: participation ? { entries: participation.totals.entries } : await entryCountFallback(),
-    today: participation
-      ? (participation.daily.find((d) => d.day === dateUtc) ?? {
-          entries: 0,
-          arrivedThroughRelay: 0,
-          witnessed: 0,
-        })
-      : null,
+    totals: total === null ? null : { entries: total },
+    reportedDay: stats,
     newestEntry: newest
       ? {
           ordinal: newest.ordinal,

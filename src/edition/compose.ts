@@ -37,6 +37,27 @@ export function editionDayNumber(dateUtc: string): number {
   return Math.floor(diff / MS_PER_DAY) + 1;
 }
 
+/** Day 1 → "2026-08-26"; the inverse of editionDayNumber. */
+export function dayToDateUtc(day: number): string {
+  if (!Number.isInteger(day) || day < 1) {
+    throw new Error("Edition days are positive integers, got " + String(day));
+  }
+  const d = new Date(parseUtcDate(DAY_ONE_UTC).getTime() + (day - 1) * MS_PER_DAY);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * The day an edition published now should report: the most recent COMPLETED
+ * UTC day. A morning edition covers yesterday — posting "no new entries" at
+ * 08:26 about a day that is two hours old would be noise, not news. Clamped
+ * to Day 1, whose edition covered the founding day as it happened.
+ */
+export function latestReportableDay(now: Date): number {
+  const yesterday = new Date(now.getTime() - MS_PER_DAY).toISOString().slice(0, 10);
+  if (parseUtcDate(yesterday).getTime() < parseUtcDate(DAY_ONE_UTC).getTime()) return 1;
+  return editionDayNumber(yesterday);
+}
+
 /** 2026-08-27 → "27 AUG 2026", the masthead date form used across the site. */
 export function editionDateLabel(dateUtc: string): string {
   const d = parseUtcDate(dateUtc);
@@ -60,17 +81,18 @@ export const OPEN_CASE = {
 } as const;
 
 export interface EditionInputs {
-  /** The UTC calendar day this edition describes. */
+  /** The UTC calendar day this edition reports (normally yesterday). */
   dateUtc: string;
-  /** Ledger-derived total, or null when no projection can answer. */
+  /** Entries in the ledger by the END of the reported day, or null. */
   totals: { entries: number } | null;
-  /** Participation for `dateUtc` specifically; zeros are a real answer. */
-  today: { entries: number; arrivedThroughRelay: number; witnessed: number } | null;
-  /** Highest sealed place, for "newest place" phrasing. */
+  /** What entered during the reported day; zeros are a real answer. */
+  reportedDay: { entries: number; relayArrivals: number } | null;
+  /** Highest place sealed within the reported day. */
   newestEntry: { ordinal: number; displayName: string | null; publicStatus: string } | null;
+  /** LIVE lines: gate and write state are always about now, never replayed. */
   gates: { met: number; total: number } | null;
   ledger: { state: "OPEN" | "CLOSED" | "PAUSED"; canAcceptEntries: boolean } | null;
-  /** Today's PUBLIC non-entry receipt events, newest first. */
+  /** The reported day's PUBLIC non-entry receipt events, newest first. */
   builtEvents: { type: string; payload: Record<string, unknown> }[] | null;
 }
 
@@ -90,25 +112,34 @@ export interface Edition {
 const UNAVAILABLE = "Unavailable in this environment.";
 
 function formedLine(inputs: EditionInputs): string {
-  const { totals, today, newestEntry, ledger } = inputs;
+  const { totals, reportedDay, newestEntry, ledger } = inputs;
   if (totals === null) return UNAVAILABLE;
 
-  const parts: string[] = [];
-  if (today === null || today.entries === 0) {
-    parts.push("No new entries.");
-  } else {
-    const relay =
-      today.arrivedThroughRelay > 0 ? `, ${today.arrivedThroughRelay} through a relay` : "";
-    parts.push(`${today.entries} entered${relay}.`);
-    if (newestEntry) {
-      const name =
+  const newestLabel = newestEntry
+    ? `Newest place ${formatOrdinal(newestEntry.ordinal)}${
         newestEntry.publicStatus === "SEALED" && newestEntry.displayName
           ? " · " + newestEntry.displayName
-          : "";
-      parts.push(`Newest place ${formatOrdinal(newestEntry.ordinal)}${name}.`);
+          : ""
+      }.`
+    : null;
+
+  const parts: string[] = [];
+  if (reportedDay === null) {
+    // Unknown and zero are different claims: with no per-day answer, the
+    // line reports the durable facts and says nothing about the day.
+    parts.push(`${totals.entries} ${totals.entries === 1 ? "person" : "people"} in the ledger.`);
+    if (newestLabel) parts.push(newestLabel);
+  } else {
+    if (reportedDay.entries === 0) {
+      parts.push("No new entries.");
+    } else {
+      const relay =
+        reportedDay.relayArrivals > 0 ? `, ${reportedDay.relayArrivals} through a relay` : "";
+      parts.push(`${reportedDay.entries} entered${relay}.`);
+      if (newestLabel) parts.push(newestLabel);
     }
+    parts.push(`${totals.entries} ${totals.entries === 1 ? "person" : "people"} in the ledger.`);
   }
-  parts.push(`${totals.entries} ${totals.entries === 1 ? "person" : "people"} in the ledger.`);
   if (ledger !== null) {
     parts.push(
       ledger.canAcceptEntries

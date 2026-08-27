@@ -57,6 +57,43 @@ export async function newestPublicEntry(): Promise<PublicEntry | null> {
   return rows[0] ? mapRow(rows[0]) : null;
 }
 
+/**
+ * The edition's per-day formation facts, computed from the public ledger
+ * itself so any past day is recomputable in any environment — the log is
+ * the archive; nothing is stored twice.
+ */
+export async function entryStatsForWindow(
+  startIso: string,
+  endIso: string,
+): Promise<{ entries: number; relayArrivals: number }> {
+  const rows = await getSql().unsafe<{ entries: number; relay_arrivals: number }[]>(
+    "SELECT count(*)::int AS entries, count(predecessor_ordinal)::int AS relay_arrivals FROM public.founding_ledger WHERE entered_at >= $1::timestamptz AND entered_at < $2::timestamptz",
+    [startIso, endIso],
+  );
+  return { entries: rows[0]?.entries ?? 0, relayArrivals: rows[0]?.relay_arrivals ?? 0 };
+}
+
+/** Highest place sealed inside a window; the reported day's newest entry. */
+export async function newestPublicEntryInWindow(
+  startIso: string,
+  endIso: string,
+): Promise<PublicEntry | null> {
+  const rows = await getSql().unsafe<Parameters<typeof mapRow>[0][]>(
+    "SELECT * FROM public.founding_ledger WHERE entered_at >= $1::timestamptz AND entered_at < $2::timestamptz ORDER BY ordinal DESC LIMIT 1",
+    [startIso, endIso],
+  );
+  return rows[0] ? mapRow(rows[0]) : null;
+}
+
+/** Ledger size as of an instant; the edition's end-of-day total. */
+export async function totalEntriesBefore(endIso: string): Promise<number> {
+  const rows = await getSql().unsafe<{ entries: number }[]>(
+    "SELECT count(*)::int AS entries FROM public.founding_ledger WHERE entered_at < $1::timestamptz",
+    [endIso],
+  );
+  return rows[0]?.entries ?? 0;
+}
+
 export async function getPublicEntry(ordinal: number): Promise<PublicEntry | null> {
   const rows = await getSql().unsafe<Parameters<typeof mapRow>[0][]>(
     "SELECT * FROM public.founding_ledger WHERE ordinal = $1 LIMIT 1",

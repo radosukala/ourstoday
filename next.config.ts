@@ -43,8 +43,8 @@ const nextConfig: NextConfig = {
     "/source/[...document]": ["./docs/**/*.md"],
     // Edition card fonts are committed files read at render time; trace them
     // into the two image-producing routes.
-    "/api/v1/edition/card": ["./src/edition/fonts/*.ttf"],
-    "/today/opengraph-image": ["./src/edition/fonts/*.ttf"],
+    "/api/v1/edition/card": ["./src/edition/fonts/*.ttf", "./src/edition/fonts/*.woff"],
+    "/today/opengraph-image": ["./src/edition/fonts/*.ttf", "./src/edition/fonts/*.woff"],
   },
   async headers() {
     return [

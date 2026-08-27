@@ -6,8 +6,12 @@
  * from the deployed site, not composed here: the text a person posts must be
  * the same truth the public page shows, never a laptop's memory of it.
  *
+ * The edition reports the latest COMPLETED day — the morning post carries
+ * yesterday's record, not an empty today.
+ *
  * Usage:
  *   pnpm edition                  read https://ourstoday.com
+ *   pnpm edition --day 2          a specific archived day
  *   pnpm edition --local          read NEXT_PUBLIC_APP_URL or localhost:3000
  *   pnpm edition --base <url>     read another environment
  *   pnpm edition --no-card        skip downloading the card image
@@ -31,9 +35,10 @@ interface EditionPayload {
   card: string;
 }
 
-function parseArgs(argv: string[]): { base: string; card: boolean } {
+function parseArgs(argv: string[]): { base: string; card: boolean; day: number | undefined } {
   let base = DEFAULT_BASE;
   let card = true;
+  let day: number | undefined;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--local") {
@@ -46,6 +51,12 @@ function parseArgs(argv: string[]): { base: string; card: boolean } {
         process.exit(1);
       }
       base = value;
+    } else if (arg === "--day") {
+      day = Number.parseInt(argv[++i] ?? "", 10);
+      if (!Number.isInteger(day) || day < 1) {
+        console.error("--day requires a positive integer");
+        process.exit(1);
+      }
     } else if (arg === "--no-card") {
       card = false;
     } else {
@@ -53,7 +64,7 @@ function parseArgs(argv: string[]): { base: string; card: boolean } {
       process.exit(1);
     }
   }
-  return { base: base.replace(/\/$/, ""), card };
+  return { base: base.replace(/\/$/, ""), card, day };
 }
 
 function rule(label: string): void {
@@ -63,14 +74,17 @@ function rule(label: string): void {
 }
 
 async function main(): Promise<void> {
-  const { base, card } = parseArgs(process.argv.slice(2));
+  const { base, card, day } = parseArgs(process.argv.slice(2));
   const host = new URL(base).hostname;
   const local = host === "localhost" || host === "127.0.0.1" || host === "::1";
   console.info("edition → " + host + (local ? "  [LOCAL]" : "  [REMOTE]"));
 
+  const query = day !== undefined ? `?day=${day}` : "";
   let payload: EditionPayload;
   try {
-    const res = await fetch(base + "/api/v1/edition", { headers: { accept: "application/json" } });
+    const res = await fetch(base + "/api/v1/edition" + query, {
+      headers: { accept: "application/json" },
+    });
     if (!res.ok) {
       console.error(
         "The edition endpoint answered " +

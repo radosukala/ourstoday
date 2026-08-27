@@ -5,9 +5,11 @@ import {
   buildXPost,
   composeEdition,
   DAY_ONE_UTC,
+  dayToDateUtc,
   editionDateLabel,
   editionDayNumber,
   formatOrdinal,
+  latestReportableDay,
   type EditionInputs,
 } from "@/edition/compose";
 import { assertNoForbiddenClaims, LOCK_LINE, STATUS_LINE } from "@/legal/documents";
@@ -16,7 +18,7 @@ function fullInputs(overrides: Partial<EditionInputs> = {}): EditionInputs {
   return {
     dateUtc: "2026-08-27",
     totals: { entries: 3 },
-    today: { entries: 1, arrivedThroughRelay: 1, witnessed: 0 },
+    reportedDay: { entries: 1, relayArrivals: 1 },
     newestEntry: { ordinal: 3, displayName: "ol1ver", publicStatus: "SEALED" },
     gates: { met: 0, total: 16 },
     ledger: { state: "OPEN", canAcceptEntries: true },
@@ -26,14 +28,26 @@ function fullInputs(overrides: Partial<EditionInputs> = {}): EditionInputs {
 }
 
 describe("edition chronology", () => {
-  it("counts days from Day 1 inclusively", () => {
+  it("counts days from Day 1 inclusively, both directions", () => {
     expect(editionDayNumber(DAY_ONE_UTC)).toBe(1);
     expect(editionDayNumber("2026-08-27")).toBe(2);
     expect(editionDayNumber("2026-09-26")).toBe(32);
+    expect(dayToDateUtc(1)).toBe(DAY_ONE_UTC);
+    expect(dayToDateUtc(2)).toBe("2026-08-27");
+    expect(dayToDateUtc(32)).toBe("2026-09-26");
   });
 
   it("refuses a date before Day 1 instead of inventing an edition", () => {
     expect(() => editionDayNumber("2026-08-25")).toThrow(/Day 1/);
+    expect(() => dayToDateUtc(0)).toThrow(/positive/);
+  });
+
+  it("reports the most recent completed day, clamped to Day 1", () => {
+    // The morning of Day 2 reports Day 1; the morning of Day 3 reports Day 2.
+    expect(latestReportableDay(new Date("2026-08-27T06:26:00Z"))).toBe(1);
+    expect(latestReportableDay(new Date("2026-08-28T06:26:00Z"))).toBe(2);
+    // On Day 1 itself there is no completed day yet; the founding day stands.
+    expect(latestReportableDay(new Date("2026-08-26T12:00:00Z"))).toBe(1);
   });
 
   it("labels dates in the masthead form and ordinals in the ledger form", () => {
@@ -43,24 +57,29 @@ describe("edition chronology", () => {
 });
 
 describe("edition lines", () => {
-  it("reports formation with exact counts and the entry gate", () => {
+  it("reports the day's formation with exact counts and the entry gate", () => {
     const edition = composeEdition(fullInputs());
     expect(edition.formed).toBe(
       "1 entered, 1 through a relay. Newest place #000003 · ol1ver. 3 people in the ledger. Entry is open.",
     );
   });
 
-  it("says plainly when nobody entered", () => {
-    const edition = composeEdition(
-      fullInputs({ today: { entries: 0, arrivedThroughRelay: 0, witnessed: 0 } }),
-    );
+  it("says plainly when nobody entered that day", () => {
+    const edition = composeEdition(fullInputs({ reportedDay: { entries: 0, relayArrivals: 0 } }));
     expect(edition.formed).toContain("No new entries.");
     expect(edition.formed).toContain("3 people in the ledger.");
   });
 
-  it("never invents a number when a projection is unavailable", () => {
+  it("treats an unknown day as unknown, never as zero", () => {
+    const edition = composeEdition(fullInputs({ reportedDay: null }));
+    expect(edition.formed).not.toContain("No new entries");
+    expect(edition.formed).toContain("3 people in the ledger.");
+    expect(edition.formed).toContain("Newest place #000003");
+  });
+
+  it("never invents a number when the ledger projection is unavailable", () => {
     const edition = composeEdition(
-      fullInputs({ totals: null, today: null, newestEntry: null, builtEvents: null }),
+      fullInputs({ totals: null, reportedDay: null, newestEntry: null, builtEvents: null }),
     );
     expect(edition.formed).toBe("Unavailable in this environment.");
     expect(edition.built).toBe("Unavailable in this environment.");
@@ -107,7 +126,7 @@ describe("edition lines", () => {
 });
 
 describe("share language", () => {
-  it("carries the lock, the day and the canonical address", () => {
+  it("carries the lock, the reported day and the canonical address", () => {
     const edition = composeEdition(fullInputs());
     const x = buildXPost(edition);
     expect(x).toContain("OURS TODAY — DAY 2");
