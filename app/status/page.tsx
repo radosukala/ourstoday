@@ -37,11 +37,14 @@ export const metadata: Metadata = {
     title: "What is not yet true about us",
     description:
       "Sixteen launch gates, live, with the named human decision blocking each. Conformance published either way.",
+    images: ["/og.png"],
   },
   twitter: {
+    card: "summary_large_image",
     title: "What is not yet true about us",
     description:
       "Sixteen launch gates, live, with the named human decision blocking each. Conformance published either way.",
+    images: ["/og.png"],
   },
 };
 

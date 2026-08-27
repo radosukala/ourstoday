@@ -49,6 +49,14 @@ export async function listPublicEntries(limit = 200): Promise<PublicEntry[]> {
   return rows.map(mapRow);
 }
 
+/** Highest ordinal in the public projection; the edition's "newest place". */
+export async function newestPublicEntry(): Promise<PublicEntry | null> {
+  const rows = await getSql().unsafe<Parameters<typeof mapRow>[0][]>(
+    "SELECT * FROM public.founding_ledger ORDER BY ordinal DESC LIMIT 1",
+  );
+  return rows[0] ? mapRow(rows[0]) : null;
+}
+
 export async function getPublicEntry(ordinal: number): Promise<PublicEntry | null> {
   const rows = await getSql().unsafe<Parameters<typeof mapRow>[0][]>(
     "SELECT * FROM public.founding_ledger WHERE ordinal = $1 LIMIT 1",

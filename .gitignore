@@ -24,6 +24,9 @@ playwright/.cache/
 # OS noise
 .DS_Store
 
+# daily edition cards saved by `pnpm edition`; regenerate any time
+ours-today-day-*.png
+
 # ours-fork output; regenerate with `pnpm fork export`
 /fork-export/
 

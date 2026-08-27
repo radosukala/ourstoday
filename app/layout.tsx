@@ -20,6 +20,15 @@ export const metadata: Metadata = {
       },
     ],
   },
+  // Without an explicit twitter:card, X falls back to the small imageless
+  // summary card even when og:image is present. Observed on the first live
+  // share of the homepage, 26 AUG 2026.
+  twitter: {
+    card: "summary_large_image",
+    title: LOCK_LINE,
+    description: "Forming toward member ownership and building its software in public.",
+    images: ["/og.png"],
+  },
   icons: {
     icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111111'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='17' fill='%23f3f0e8' text-anchor='middle'%3EO%3C/text%3E%3C/svg%3E",
   },

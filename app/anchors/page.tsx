@@ -26,11 +26,14 @@ export const metadata: Metadata = {
     title: "Provable without us",
     description:
       "A record a single company can lose is not a public record. Verify our Merkle roots yourself, offline.",
+    images: ["/og.png"],
   },
   twitter: {
+    card: "summary_large_image",
     title: "Provable without us",
     description:
       "A record a single company can lose is not a public record. Verify our Merkle roots yourself, offline.",
+    images: ["/og.png"],
   },
 };
 

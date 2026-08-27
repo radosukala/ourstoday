@@ -41,6 +41,10 @@ const nextConfig: NextConfig = {
   // Governing documents must exist in server bundles (output tracing).
   outputFileTracingIncludes: {
     "/source/[...document]": ["./docs/**/*.md"],
+    // Edition card fonts are committed files read at render time; trace them
+    // into the two image-producing routes.
+    "/api/v1/edition/card": ["./src/edition/fonts/*.ttf"],
+    "/today/opengraph-image": ["./src/edition/fonts/*.ttf"],
   },
   async headers() {
     return [
