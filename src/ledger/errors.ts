@@ -8,6 +8,14 @@ export class LedgerClosedError extends Error {
   }
 }
 
+/** The row-locked allocator has reached the terminal value 1,000,001. */
+export class FoundingEraFullError extends Error {
+  constructor() {
+    super("All 1,000,000 Founding Million places have been issued.");
+    this.name = "FoundingEraFullError";
+  }
+}
+
 export class AlreadySealedError extends Error {
   readonly existingOrdinal: number | null;
   constructor(existingOrdinal: number | null) {

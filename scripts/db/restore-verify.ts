@@ -15,7 +15,7 @@ import path from "node:path";
 import os from "node:os";
 import type postgres from "postgres";
 import { adminSql, connect, directUrl, createScratchDatabase, dropDatabase } from "./dbadmin";
-import { notRun, requireDatabaseUrl } from "../env";
+import { announceTarget, notRun, requireDatabaseUrl, takeProfile } from "../env";
 import { digestEvent } from "../../src/ledger/events";
 
 function pgEnv(): NodeJS.ProcessEnv {
@@ -138,7 +138,9 @@ function haveTool(tool: string): boolean {
 }
 
 async function main() {
-  requireDatabaseUrl("db:restore:verify");
+  const { profile } = takeProfile(process.argv.slice(2));
+  requireDatabaseUrl("db:restore:verify", profile);
+  announceTarget("db:restore:verify");
   for (const tool of ["pg_dump", "pg_restore"]) {
     if (!haveTool(tool)) notRun("db:restore:verify", tool + " is not on PATH");
   }
@@ -165,9 +167,17 @@ async function main() {
       env: pgEnv(),
       stdio: "pipe",
     });
+    // --no-acl as well as --no-owner: a managed provider's dump carries GRANT
+    // and ALTER DEFAULT PRIVILEGES statements for platform roles the restoring
+    // user is not allowed to change (on Neon, `cloud_admin` granting to
+    // `neon_superuser`). Replaying them fails, pg_restore exits non-zero, and
+    // the rehearsal reports a broken backup when nothing about the record is
+    // wrong. Ownership and privileges are provisioned by migration 0003, not
+    // by the dump — what this gate verifies is that the DATA and the digest
+    // chain survive a round trip.
     execFileSync(
       "pg_restore",
-      ["-h", host, "-p", port, "-U", user, "-d", targetDb, "--no-owner", dumpFile],
+      ["-h", host, "-p", port, "-U", user, "-d", targetDb, "--no-owner", "--no-acl", dumpFile],
       { env: pgEnv(), stdio: "pipe" },
     );
 

@@ -22,12 +22,16 @@ export function Masthead({ formationStatus }: { formationStatus: string }) {
       <div className="formation-status">
         <i aria-hidden="true"></i> {formationStatus}
       </div>
-      <nav className="main-nav" aria-label="Day 1 sections">
+      {/* These pointed at /#ledger, /#tapes, /#constitution and /#decision —
+          sections of the Day 1 homepage. The Founding Million replaced that
+          page, so four of the five links on every record page led nowhere.
+          They now name pages that exist. */}
+      <nav className="main-nav" aria-label="The record">
         <a href="/today">TODAY</a>
-        <a href="/#ledger">LEDGER</a>
-        <a href="/#tapes">TAPES</a>
-        <a href="/#constitution">CONSTITUTION</a>
-        <a href="/#decision">DECISION</a>
+        <a href="/status">STATUS</a>
+        <a href="/anchors">ANCHORS</a>
+        <a href="/source/FOUNDING-RIGHT-0.1.md">THE RIGHT</a>
+        <a href="/enter">ENTER</a>
       </nav>
     </header>
   );

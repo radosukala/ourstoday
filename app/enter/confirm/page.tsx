@@ -1,4 +1,4 @@
-import { Masthead } from "@/components/Masthead";
+import { FoundingFooter, FoundingTopline } from "@/components/FoundingChrome";
 import { ConfirmClient } from "./ConfirmClient";
 
 export const dynamic = "force-static";
@@ -14,12 +14,13 @@ export const dynamic = "force-static";
  */
 export default function ConfirmPage() {
   return (
-    <>
+    <div className="fm-flow">
       <a className="skip-link" href="#main">
         Skip to confirmation
       </a>
-      <Masthead formationStatus="ENTRY · CONFIRM" />
+      <FoundingTopline status="ENTRY · CONFIRM" />
       <ConfirmClient />
-    </>
+      <FoundingFooter />
+    </div>
   );
 }

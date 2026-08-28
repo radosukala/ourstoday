@@ -1,26 +1,38 @@
 # OURS TODAY
 
-> **THE NETWORK IS OURS. EVERYTHING ELSE CAN BE BUILT.**
+> **NOBODY LEAVES FIRST. EVERYBODY LEAVES TOGETHER.**
 >
 > **The record cannot be bought into. Not now, not later, not by us.**
 
-OURS is a member-owned network that builds its own software in public.
+OURS is a member-owned network that builds its own software in public. The
+first 1,000,000 people form it: one person, one non-transferable
+[Founding Right](docs/FOUNDING-RIGHT-0.1.md), free.
 
 **Day 1:** 26 August 2026
 **Ownership status:** COMMITTED · **Legal membership:** NOT YET ISSUED
-**Canonical intended domain:** `ourstoday.com`
+**Domain:** `ourstoday.com`
 
 ---
 
 ## Truthful status
 
-**This runs locally. Nothing is deployed.** No Git remote, no hosting, no
-database outside a developer's machine, no domain, no email sending domain.
-Current external cost: **0.00 EUR**.
+Verified 28 August 2026 against the live endpoints, because this section is
+the one place in the repository where being out of date is the same as lying.
 
-Canonical writes are closed behind two independent gates and stay closed until
-a founder-steward readiness receipt is published. Passing tests is not
-authorization to open them.
+**This is deployed.** `ourstoday.com` is served from Vercel. The Git remote is
+public. A production PostgreSQL database exists and holds **5 entries**. Email
+sends through Resend from a verified `updates.ourstoday.com`. External cost is
+no longer zero.
+
+**Production canonical writes are OPEN.** `/api/health?deep=1` reports
+`ledger: OPEN` and `canAcceptEntries: true`: anyone can seal a real entry right
+now. This is not a rehearsal.
+
+**Production is behind this repository.** It serves commit `8315f0e` under
+Founding Declaration **0.1**. The Founding Million — the one-million cap,
+Founding Right 0.1, the target registry, the rebuilt homepage and entry flow —
+exists only locally and is **not deployed**. Production has not had migrations
+0007 through 0010 applied.
 
 **One of sixteen launch gates is met.** The live list, with the evidence each
 one requires and the named human decision blocking it, is at `/status`.
@@ -115,6 +127,8 @@ the founder-steward, and if it fails, the ledger does not open.
 **Direction and build**
 
 - [Founding Ledger backend build handoff](docs/FOUNDING-LEDGER-BUILD-HANDOFF.md)
+- [Founding Right 0.1](docs/FOUNDING-RIGHT-0.1.md) and its
+  [constitutional amendment](docs/CONSTITUTION-AMENDMENT-0.1-FOUNDING-MILLION.md)
 - [Vision Escalation 0.1](docs/OURS-VISION-ESCALATION-0.1.md) — proposal, as
   written
 - [Vision Escalation adoption receipt](docs/receipts/2026-08-26-vision-escalation-adoption.md)
@@ -150,12 +164,14 @@ those questions are the point
 
 ## What this is not
 
-A Founding Ledger entry is not a share, a security, a token, an ownership
-certificate, a legal member register or a promise of profit. No number is
-reserved, previewed, sold, transferred or reassigned. A verified entrant keeps
-their place without recruiting anyone. Referral count creates no vote,
-ownership or economic right. There is no follower count, no like and no
-popularity measure — not because they are hidden, but because they are not
-fields.
+A Founding Million entry carries the finite project rights in Founding Right
+0.1: a permanent ordinal, one equal founding-ratification ballot, one equal
+first-mission ballot, notice and record rights, and data and exit rights. It is
+not a share, a security, a token, an ownership certificate, a legal member
+register or a promise of profit. No number is reserved, previewed, sold,
+transferred or reassigned. A verified entrant keeps their place without
+recruiting anyone. Referral count creates no extra vote, ownership or economic
+right. There is no follower count, no like and no popularity measure — not
+because they are hidden, but because they are not fields.
 
 Success looks like being as boring as a land registry, and as hard to delete.

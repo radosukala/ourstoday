@@ -31,7 +31,7 @@ describe("atomic seal under concurrency", () => {
           authUserId: p.authUserId,
           displayName: "Concurrent " + i,
           acceptedVersions: {
-            declaration: "ours-founding-declaration/0.1",
+            declaration: "ours-founding-declaration/0.2",
             constitution: "ours-founding-constitution/0.1",
             protocol: "ours.founding-relay/0.1",
             privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -105,7 +105,7 @@ describe("atomic seal under concurrency", () => {
         authUserId: person.authUserId,
         displayName: "Double A",
         acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
+          declaration: "ours-founding-declaration/0.2",
           constitution: "ours-founding-constitution/0.1",
           protocol: "ours.founding-relay/0.1",
           privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -117,7 +117,7 @@ describe("atomic seal under concurrency", () => {
         authUserId: person.authUserId,
         displayName: "Double B",
         acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
+          declaration: "ours-founding-declaration/0.2",
           constitution: "ours-founding-constitution/0.1",
           protocol: "ours.founding-relay/0.1",
           privacyNotice: "ours-privacy-notice-draft/0.1",

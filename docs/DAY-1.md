@@ -186,7 +186,7 @@ The line continued.
 ```text
 OURS is deciding P-0001 in public:
 
-Should the Founding Era close when Constitution 1.0 is ratified?
+What should OURS build first?
 
 Add evidence, commit to test, or object with a reason:
 https://ourstoday.com/p/0001
@@ -199,41 +199,60 @@ person's behalf.
 
 ## 7. The first open case
 
-### P-0001 — When does the Founding Era end?
+### P-0001 — What does OURS build first?
 
-**Class:** Constitutional signal  
-**Current status:** GATHERING EVIDENCE · NOT OPEN FOR RATIFICATION  
-**Proposed answer:** when Constitution 1.0 receives valid founding-member
-ratification, not when an arbitrary number of people enter
+**Class:** Mission authorization  
+**Current status:** GATHERING NOTICE · NOT OPEN FOR RATIFICATION  
+**Answered by:** the people who give notice, once a threshold is reached
 
-#### Case for
+> An earlier P-0001 asked when the Founding Era ends. Amendment 0.1 answered
+> it — at ordinal 1,000,000, enforced by the allocator and by a database
+> constraint rather than by copy. A question the schema has already settled
+> does not belong on the public board, so the number now carries the question
+> that is genuinely undecided.
 
-- It ties founder status to an institutional achievement rather than artificial
-  scarcity.
-- A viral burst does not arbitrarily exclude people because a counter filled.
-- Low chronological numbers already preserve early courage.
-- The founding cohort has a defined job: constitute the institution.
+#### The question
+
+There are twelve targets in the registry. Every one of them is a thing people
+already pay for, already depend on, and already cannot leave alone. OURS can
+only build one of them first.
+
+Nobody is being asked to predict. A notice is a conditional commitment: *I
+move when enough others do.* Below the threshold it binds nobody and triggers
+nothing.
+
+#### Case for deciding by notice
+
+- The people who will have to switch are the only ones who know what switching
+  costs them.
+- Demand that has already assembled is the only asset OURS has; measuring it is
+  the same act as building it.
+- A threshold makes the promise falsifiable. Either the number arrives or it
+  does not.
 
 #### Case against
 
-- Ratification timing may be delayed by legal work.
-- An undefined period can make “founding” feel indefinite.
-- People entering under different constitutional drafts may have different
-  expectations.
+- Early notices come from an unrepresentative crowd, and the first target may
+  reflect who arrived rather than what matters.
+- A target that stalls below its threshold looks like failure even when the
+  mechanism worked exactly as described.
+- Notice counts are demand signals. They are not votes, and the difference has
+  to survive contact with people who will read them as votes.
 
 #### Evidence needed
 
-- legal feasibility of pre-membership/founding eligibility;
-- understandable disclosure for entrants;
-- expected time to Constitution 1.0;
-- whether the term materially changes propagation or trust;
-- a fair transition if legal issuance is delayed.
+- whether a threshold of 1,000 is the right order of magnitude for any target;
+- what a person actually needs to see before a conditional commitment feels
+  real;
+- how a target is retired when it is clearly not wanted;
+- whether people may nominate targets that are not in the registry.
 
 #### Authority
 
-Founder-steward may open the case and commission legal review. It cannot be
-labeled member-ratified before legal members and a valid ratification process
-exist.
+Founder-steward may open the case, set thresholds and commission the build.
+Notice counts do not create governance authority, and no notice count may be
+described as a ratification before legal members and a valid ratification
+process exist.
 
 ---
 

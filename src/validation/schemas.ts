@@ -48,6 +48,22 @@ export const sealRequestSchema = z.object({
    * naming nobody is a complete entry, not a partial one.
    */
   witnessOrdinal: z.number().int().positive().max(100_000_000).optional(),
+  /**
+   * Missions this person gives notice on. Optional because a place in the
+   * record never depends on wanting anything in particular.
+   */
+  noticeSlugs: z
+    .array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/))
+    .max(20)
+    .optional(),
+});
+
+export const noticeGiveRequestSchema = z.object({
+  noticeSlugs: z
+    .array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/))
+    .min(1)
+    .max(20),
+  idempotencyKey: idempotencyKeySchema,
 });
 
 export const correctionRequestSchema = z.object({

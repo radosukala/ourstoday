@@ -14,7 +14,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { loadEnv } from "../env";
+import { loadEnv, takeProfile } from "../env";
 import { normalizeConnectionUrl } from "../../src/db/connection-url";
 import { connect } from "./dbadmin";
 
@@ -83,7 +83,8 @@ function classify(error: unknown): string {
 
 async function main(): Promise<void> {
   const before = { ...process.env };
-  loadEnv();
+  const { profile } = takeProfile(process.argv.slice(2));
+  loadEnv(profile);
 
   console.info("OURS connection doctor\n");
   console.info("APP_ENV                 " + (process.env.APP_ENV ?? "(unset, treated as local)"));

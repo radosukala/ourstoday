@@ -60,7 +60,7 @@ export function EditionView({ edition, latestDay }: { edition: Edition; latestDa
                 </span>
               </div>
               <b>
-                <a href="/#ledger">LEDGER ↗</a>
+                <a href="/">LEDGER ↗</a>
               </b>
             </li>
             <li>
@@ -92,7 +92,7 @@ export function EditionView({ edition, latestDay }: { edition: Edition; latestDa
                 <span>Live. Respond with something the network can use, not a reaction.</span>
               </div>
               <b>
-                <a href="/#decision">CASE ↗</a>
+                <a href="/#first">CASE ↗</a>
               </b>
             </li>
           </ul>

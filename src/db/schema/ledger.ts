@@ -55,6 +55,9 @@ export const entry = ledgerNs.table(
     declarationVersion: text("declaration_version").notNull(),
     protocolVersion: text("protocol_version").notNull(),
     legalStatusVersion: text("legal_status_version").notNull(),
+    foundingRightVersion: text("founding_right_version")
+      .notNull()
+      .default("ours-founding-right/0.1"),
     originKind: text("origin_kind").notNull().default("DEFAULT_ENTRY"),
     predecessorEntryId: uuid("predecessor_entry_id"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),

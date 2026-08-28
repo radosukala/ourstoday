@@ -1,16 +1,16 @@
-import { Masthead } from "@/components/Masthead";
+import { FoundingFooter, FoundingTopline } from "@/components/FoundingChrome";
 import { EnterForm } from "./EnterForm";
-import { FOUNDING_DECLARATION_V01, STATUS_LINE } from "@/legal/documents";
+import { FOUNDING_DECLARATION_V02, STATUS_LINE } from "@/legal/documents";
 
 export const dynamic = "force-dynamic";
 
 export default function EnterPage() {
   return (
-    <>
+    <div className="fm-flow">
       <a className="skip-link" href="#main">
         Skip to entry
       </a>
-      <Masthead formationStatus="ENTRY · VERIFY YOUR EMAIL" />
+      <FoundingTopline status="ENTRY · STEP 01 OF 03" />
       <main id="main">
         <section className="entry-instrument ink-section" aria-labelledby="enter-title">
           <div className="entry-copy">
@@ -33,7 +33,7 @@ export default function EnterPage() {
               <pre
                 style={{ whiteSpace: "pre-wrap", margin: "18px 0 0", font: "12px/1.8 var(--mono)" }}
               >
-                {FOUNDING_DECLARATION_V01}
+                {FOUNDING_DECLARATION_V02}
               </pre>
             </details>
           </div>
@@ -45,6 +45,7 @@ export default function EnterPage() {
           </div>
         </section>
       </main>
-    </>
+      <FoundingFooter />
+    </div>
   );
 }

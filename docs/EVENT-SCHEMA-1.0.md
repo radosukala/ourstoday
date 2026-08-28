@@ -120,7 +120,7 @@ verify` does it offline against an exported copy.
 
 | Type | Privacy | Payload |
 |---|---|---|
-| `ledger.entry.sealed` | PUBLIC | `ordinal`, `entryId`, `declarationVersion`, `protocolVersion`, `legalStatusVersion`, `predecessorOrdinal?`, `witnessOrdinal?` |
+| `ledger.entry.sealed` | PUBLIC | `ordinal`, `entryId`, `declarationVersion`, `protocolVersion`, `legalStatusVersion`, `foundingRightVersion`, `predecessorOrdinal?`, `witnessOrdinal?` |
 | `ledger.entry.witnessed` | PUBLIC | `ordinal`, `witnessOrdinal`, `confers: "NOTHING"`, `note` |
 | `ledger.entry.corrected` | PUBLIC | `ordinal`, `fieldChanged`, `previousName`, `newName` |
 | `ledger.entry.withdrawn` | PUBLIC | `ordinal`, `outcome`, `note` |

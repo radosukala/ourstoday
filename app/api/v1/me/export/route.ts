@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     [personId],
   );
   const entryRows = await getSql().unsafe<Record<string, unknown>[]>(
-    "SELECT ordinal, display_name, seal_ts, lifecycle, declaration_version, protocol_version, predecessor_entry_id IS NOT NULL AS has_predecessor FROM ledger.entry WHERE person_id = $1 ORDER BY ordinal ASC",
+    "SELECT ordinal, display_name, seal_ts, lifecycle, declaration_version, protocol_version, founding_right_version, predecessor_entry_id IS NOT NULL AS has_predecessor FROM ledger.entry WHERE person_id = $1 ORDER BY ordinal ASC",
     [personId],
   );
   const eventRows = await getSql().unsafe<Record<string, unknown>[]>(

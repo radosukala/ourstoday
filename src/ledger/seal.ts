@@ -1,10 +1,12 @@
 import { config } from "@/config";
 import { getSql, jsonParam, toDate, tsParam, type DbTimestamp, type OurSql } from "@/db/sqltype";
 import type { DocumentVersions } from "@/legal/documents";
+import { FOUNDING_LIMIT, FOUNDING_RIGHT_VERSION } from "@/founding/right";
 import { signRelayToken } from "@/security/relay";
 import { sha256Hex } from "@/security/digest";
 import {
   AlreadySealedError,
+  FoundingEraFullError,
   IdempotencyConflictError,
   InvalidRelayError,
   InvalidWitnessError,
@@ -14,6 +16,7 @@ import {
 } from "./errors";
 import { digestEvent, newEventId } from "./events";
 import { memberRootFor } from "./member-root";
+import { resolveMissionIds } from "./missions";
 
 /**
  * The canonical entry seal. ONE PostgreSQL transaction performs every effect:
@@ -39,6 +42,17 @@ export interface SealInput {
    * names no witness enters exactly the same and is in no way lesser.
    */
   witnessOrdinal?: number;
+  /**
+   * Mission slugs this person gives notice on, recorded in the same
+   * transaction as the entry.
+   *
+   * The notice is the reason most people arrive, so it must be as canonical
+   * as the place: an entry that committed and a commitment that was lost
+   * would be two different records of the same act. Unknown slugs are
+   * dropped rather than rejected - a stale form must never cost someone the
+   * entry they came to make.
+   */
+  noticeSlugs?: readonly string[];
 }
 
 export interface SealResult {
@@ -65,6 +79,8 @@ export interface SealResult {
    * later without renumbering or reissuing anything.
    */
   memberRoot: string;
+  /** The finite project-right instrument attached to this ordinal. */
+  foundingRightVersion: string;
   receipt: SealReceipt;
 }
 
@@ -97,17 +113,20 @@ function buildReceipt(ordinal: number, isFirstContinuation: boolean): SealReceip
   return {
     headline: isFirstContinuation
       ? "The line continued through you."
-      : "You are in the Founding Ledger.",
+      : "You are in the Founding Million.",
     lines: [
       ["PUBLIC NUMBER", "#".concat(padded, " - assigned when your verified entry was sealed.")],
-      ["WHAT THIS IS", "A chronological Founding Ledger place. Not a share, security or token."],
-      ["WHAT THIS IS NOT", "Not legal membership. Not an extra vote. Not transferable."],
+      [
+        "FOUNDING RIGHT",
+        "A permanent number and one equal founding ballot. Never transferable or multiplied.",
+      ],
+      ["LEGAL STATUS", "A project right. Not legal membership, a share, security or token."],
       ["YOUR RELAY", "Issued after commit. Carry it if and where you choose."],
     ],
     legalStatus: "OWNERSHIP: COMMITTED \u00b7 LEGAL MEMBERSHIP: NOT YET ISSUED",
-    shareCopySuggestion: "I entered the Founding Ledger of OURS as #".concat(
+    shareCopySuggestion: "I am #".concat(
       padded,
-      ".\n\nThe network is ours. Everything else can be built.",
+      " of the Founding Million.\n\nNobody leaves first. Everybody leaves together.\n\nThe first 1,000,000 form enough demand to build anything.",
     ),
   };
 }
@@ -211,6 +230,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
           isFirstContinuation: snap.isFirstContinuation === true,
           ...(snap.witnessOrdinal !== undefined ? { witnessOrdinal: snap.witnessOrdinal } : {}),
           memberRoot: snap.memberRoot ?? memberRootFor(snap.entryId),
+          foundingRightVersion: FOUNDING_RIGHT_VERSION,
           relayToken: "",
           receipt: buildReceipt(snap.ordinal, snap.isFirstContinuation === true),
         };
@@ -279,6 +299,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
     );
     if (!counter[0]) throw new Error("ORDINAL_COUNTER_MISSING");
     const ordinal = counter[0].next_ordinal;
+    if (ordinal > FOUNDING_LIMIT) throw new FoundingEraFullError();
     await tx.unsafe(
       "UPDATE ledger.ordinal_counter SET next_ordinal = $1, updated_at = now() WHERE id = 1",
       [ordinal + 1],
@@ -286,7 +307,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
 
     // ---- Insert the canonical entry --------------------------------------------
     const inserted = await tx.unsafe<EntryRow[]>(
-      "INSERT INTO ledger.entry (ordinal, person_id, display_name, declaration_version, protocol_version, legal_status_version, origin_kind, predecessor_entry_id, witness_entry_id) VALUES ($1, $2, $3, $4, $5, $6, 'DEFAULT_ENTRY', $7, $8) RETURNING id, ordinal, display_name, seal_ts, predecessor_entry_id",
+      "INSERT INTO ledger.entry (ordinal, person_id, display_name, declaration_version, protocol_version, legal_status_version, founding_right_version, origin_kind, predecessor_entry_id, witness_entry_id) VALUES ($1, $2, $3, $4, $5, $6, $7, 'DEFAULT_ENTRY', $8, $9) RETURNING id, ordinal, display_name, seal_ts, predecessor_entry_id",
       [
         ordinal,
         person[0].id,
@@ -294,6 +315,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
         v.declaration_version,
         v.protocol_version,
         v.legal_status_version,
+        FOUNDING_RIGHT_VERSION,
         input.predecessor?.entryId ?? null,
         witnessEntryId,
       ],
@@ -379,6 +401,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
         declarationVersion: v.declaration_version,
         protocolVersion: v.protocol_version,
         legalStatusVersion: v.legal_status_version,
+        foundingRightVersion: FOUNDING_RIGHT_VERSION,
         ...(predecessorOrdinal !== undefined ? { predecessorOrdinal } : {}),
         ...(input.witnessOrdinal !== undefined ? { witnessOrdinal: input.witnessOrdinal } : {}),
       },
@@ -405,6 +428,40 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
           note: "Attestation of personhood. No reward, count, rank, vote, revenue or visibility.",
         },
       });
+    }
+
+    // ---- Notices -------------------------------------------------------------
+    // Recorded here, inside the entry's own transaction, because for most
+    // people the notice IS the reason they came: separating them would allow
+    // a sealed place with a lost commitment, which is a record of half an act.
+    const noticeSlugs = input.noticeSlugs ?? [];
+    let givenSlugs: string[] = [];
+    if (noticeSlugs.length > 0) {
+      const missions = await resolveMissionIds(tx, noticeSlugs);
+      for (const mission of missions) {
+        await tx.unsafe(
+          "INSERT INTO ledger.notice (entry_id, mission_id) VALUES ($1, $2) ON CONFLICT (entry_id, mission_id) DO NOTHING",
+          [entry.id, mission.id],
+        );
+      }
+      givenSlugs = missions.map((m) => m.slug);
+      if (givenSlugs.length > 0) {
+        await appendEvent({
+          id: newEventId(),
+          type: "notice.given",
+          actorType: "PERSON",
+          actorRef: String(person[0].id),
+          subjectType: "ledger.entry",
+          subjectRef: entry.id,
+          authorityRef: "ours.founding-relay/0.1",
+          privacyClass: "PUBLIC",
+          payload: {
+            ordinal: entry.ordinal,
+            missions: givenSlugs,
+            note: "A conditional commitment to move when the threshold is reached. It binds nobody below it.",
+          },
+        });
+      }
     }
 
     // ---- Arrival + atomic First Continuation race -------------------------------
@@ -466,6 +523,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
       isFirstContinuation,
       ...(input.witnessOrdinal !== undefined ? { witnessOrdinal: input.witnessOrdinal } : {}),
       memberRoot: memberRootFor(entry.id),
+      foundingRightVersion: FOUNDING_RIGHT_VERSION,
     };
     await tx.unsafe(
       "UPDATE private.idempotency_record SET status = 'COMMITTED', result_snapshot = $1::text::jsonb WHERE operation = 'entry.seal' AND person_id = $2 AND key = $3",
@@ -482,6 +540,7 @@ export async function sealEntry(input: SealInput): Promise<SealResult> {
       isFirstContinuation,
       ...(input.witnessOrdinal !== undefined ? { witnessOrdinal: input.witnessOrdinal } : {}),
       memberRoot: memberRootFor(entry.id),
+      foundingRightVersion: FOUNDING_RIGHT_VERSION,
       relayToken: signed.token,
       receipt: buildReceipt(entry.ordinal, isFirstContinuation),
     };

@@ -30,7 +30,7 @@ async function sealPredecessor(label: string): Promise<{
     authUserId: person.authUserId,
     displayName: "Relay Owner",
     acceptedVersions: {
-      declaration: "ours-founding-declaration/0.1",
+      declaration: "ours-founding-declaration/0.2",
       constitution: "ours-founding-constitution/0.1",
       protocol: "ours.founding-relay/0.1",
       privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -63,7 +63,7 @@ describe("relay attribution and the First Continuation race", () => {
           authUserId: p.authUserId,
           displayName: "Successor " + i,
           acceptedVersions: {
-            declaration: "ours-founding-declaration/0.1",
+            declaration: "ours-founding-declaration/0.2",
             constitution: "ours-founding-constitution/0.1",
             protocol: "ours.founding-relay/0.1",
             privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -125,7 +125,7 @@ describe("relay attribution and the First Continuation race", () => {
       authUserId: person.authUserId,
       displayName: "Self Referencer",
       acceptedVersions: {
-        declaration: "ours-founding-declaration/0.1",
+        declaration: "ours-founding-declaration/0.2",
         constitution: "ours-founding-constitution/0.1",
         protocol: "ours.founding-relay/0.1",
         privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -144,7 +144,7 @@ describe("relay attribution and the First Continuation race", () => {
         authUserId: person.authUserId,
         displayName: "Second Attempt",
         acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
+          declaration: "ours-founding-declaration/0.2",
           constitution: "ours-founding-constitution/0.1",
           protocol: "ours.founding-relay/0.1",
           privacyNotice: "ours-privacy-notice-draft/0.1",

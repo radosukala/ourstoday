@@ -17,6 +17,7 @@ interface EntryInfo {
   displayName: string | null;
   publicStatus: string;
   relayState: string;
+  foundingRightVersion: string;
 }
 
 export default async function MePage() {
@@ -42,9 +43,10 @@ export default async function MePage() {
           display_name: string | null;
           public_status: string;
           relay_state: string;
+          founding_right_version: string;
         }[]
       >(
-        "SELECT e.id, f.ordinal, f.display_name, f.public_status, f.relay_state FROM public.founding_ledger f JOIN ledger.entry e ON e.ordinal = f.ordinal WHERE e.person_id = $1 AND e.lifecycle <> 'VOIDED'",
+        "SELECT e.id, e.founding_right_version, f.ordinal, f.display_name, f.public_status, f.relay_state FROM public.founding_ledger f JOIN ledger.entry e ON e.ordinal = f.ordinal WHERE e.person_id = $1 AND e.lifecycle <> 'VOIDED'",
         [person.id],
       );
       if (rows[0]) {
@@ -54,6 +56,7 @@ export default async function MePage() {
           displayName: rows[0].display_name,
           publicStatus: rows[0].public_status,
           relayState: rows[0].relay_state,
+          foundingRightVersion: rows[0].founding_right_version,
         };
       }
       const wd = await getSql().unsafe<
@@ -128,6 +131,12 @@ export default async function MePage() {
                         : "NONE SEALED"}
                     </dd>
                   </div>
+                  {entry && (
+                    <div className="receipt-line">
+                      <dt>FOUNDING RIGHT</dt>
+                      <dd>{entry.foundingRightVersion}</dd>
+                    </div>
+                  )}
                   {entry && (
                     <div className="receipt-line">
                       <dt>MEMBER ROOT</dt>

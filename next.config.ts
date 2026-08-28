@@ -12,7 +12,10 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'none'",
-      "script-src 'self' 'unsafe-inline'",
+      // React's development overlay reconstructs call stacks with eval(). Keep
+      // that allowance local to development; production never receives it.
+      "script-src 'self' 'unsafe-inline'" +
+        (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data:",
       "font-src 'self'",

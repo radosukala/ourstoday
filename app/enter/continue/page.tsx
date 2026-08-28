@@ -3,9 +3,10 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { getAuth } from "@/auth/auth";
 import { getPersonByAuthUserId } from "@/lib/person";
-import { Masthead } from "@/components/Masthead";
+import { FoundingFooter, FoundingTopline } from "@/components/FoundingChrome";
 import { SealForm } from "./SealForm";
 import { currentDocumentVersions, STATUS_LINE } from "@/legal/documents";
+import { readMissionBoard } from "@/ledger/missions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,16 +20,19 @@ export default async function ContinuePage() {
     .catch(() => null);
   if (!session?.user?.id) redirect("/enter");
 
-  const person = await getPersonByAuthUserId(session.user.id);
+  const [person, missions] = await Promise.all([
+    getPersonByAuthUserId(session.user.id),
+    readMissionBoard().catch(() => []),
+  ]);
   const versions = currentDocumentVersions();
 
   return (
-    <>
+    <div className="fm-flow">
       <a className="skip-link" href="#main">
         Skip to sealing
       </a>
-      <Masthead
-        formationStatus={"SIGNED IN · " + session.user.email.replace(/^(.).*(@.*)$/, "$1***$2")}
+      <FoundingTopline
+        status={"STEP 03 OF 03 · " + session.user.email.replace(/^(.).*(@.*)$/, "$1***$2")}
       />
       <main id="main">
         <section className="entry-instrument ink-section" aria-labelledby="seal-title">
@@ -61,6 +65,10 @@ export default async function ContinuePage() {
                 <dd>Legal status {versions.legalStatus}</dd>
               </div>
               <div className="receipt-line">
+                <dt></dt>
+                <dd>Founding Right ours-founding-right/0.1</dd>
+              </div>
+              <div className="receipt-line">
                 <dt>READ THE DOCUMENTS</dt>
                 <dd>
                   <Link href="/source/FOUNDING-RELAY-PROTOCOL.md" style={{ color: "var(--paper)" }}>
@@ -70,6 +78,10 @@ export default async function ContinuePage() {
                   <Link href="/source/CONSTITUTION-0.1.md" style={{ color: "var(--paper)" }}>
                     CONSTITUTION
                   </Link>
+                  {" · "}
+                  <Link href="/source/FOUNDING-RIGHT-0.1.md" style={{ color: "var(--paper)" }}>
+                    FOUNDING RIGHT
+                  </Link>
                 </dd>
               </div>
             </div>
@@ -78,12 +90,14 @@ export default async function ContinuePage() {
             <SealForm
               versions={versions}
               alreadySealed={person ? await hasEntry(person.id) : false}
+              missions={missions}
             />
             <p className="neutral-note">{STATUS_LINE}</p>
           </div>
         </section>
       </main>
-    </>
+      <FoundingFooter />
+    </div>
   );
 }
 

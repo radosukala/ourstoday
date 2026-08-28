@@ -24,7 +24,7 @@ describe("canonical write gates", () => {
         authUserId: person.authUserId,
         displayName: "Gate Tester",
         acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
+          declaration: "ours-founding-declaration/0.2",
           constitution: "ours-founding-constitution/0.1",
           protocol: "ours.founding-relay/0.1",
           privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -46,7 +46,7 @@ describe("canonical write gates", () => {
         authUserId: person.authUserId,
         displayName: "Env Only",
         acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
+          declaration: "ours-founding-declaration/0.2",
           constitution: "ours-founding-constitution/0.1",
           protocol: "ours.founding-relay/0.1",
           privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -70,7 +70,7 @@ describe("canonical write gates", () => {
         authUserId: person.authUserId,
         displayName: "Db Only",
         acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
+          declaration: "ours-founding-declaration/0.2",
           constitution: "ours-founding-constitution/0.1",
           protocol: "ours.founding-relay/0.1",
           privacyNotice: "ours-privacy-notice-draft/0.1",

@@ -17,6 +17,8 @@ governance work, but its Mission Market was too early to be the first product.
 The documents that make this direction executable are:
 
 - [Founding Constitution 0.1](./CONSTITUTION-0.1.md)
+- [Founding Million constitutional amendment](./CONSTITUTION-AMENDMENT-0.1-FOUNDING-MILLION.md)
+- [Founding Right 0.1](./FOUNDING-RIGHT-0.1.md)
 - [Founding Relay Protocol](./FOUNDING-RELAY-PROTOCOL.md)
 - [Proposal and Deliberation Protocol](./PROPOSAL-AND-DELIBERATION-PROTOCOL.md)
 - [Agent Build Contract](./AGENT-BUILD-CONTRACT.md)
@@ -143,6 +145,11 @@ status classes or extra sovereignty.
 9. A public identity can be withdrawn or pseudonymized. “Permanent” means the
    place is not reassigned; it does not cancel privacy or erasure rights.
 10. Corrections and withdrawals are new events. History is not silently edited.
+11. The Founding Era contains exactly 1,000,000 places; the allocator rejects
+    every later entry.
+12. Each active place carries the equal, non-transferable project rights in
+    [Founding Right 0.1](./FOUNDING-RIGHT-0.1.md). It is not legal membership or
+    a share.
 
 The complete lifecycle and race behavior are defined in the
 [Founding Relay Protocol](./FOUNDING-RELAY-PROTOCOL.md).
@@ -171,7 +178,8 @@ The second event recognizes causality without creating a multilevel incentive.
 - Whether passkey-first or email-first verification produces the better balance
   of access and integrity.
 - Which share language creates conviction rather than spam.
-- Whether the Founding Era should end with ratification of Constitution 1.0.
+- How to make the path from place #1,000,000 to Constitution 1.0 ratification
+  short, understandable and independently verifiable.
 
 No economic reward may be attached to these hypotheses before legal and
 behavioral review.
@@ -183,7 +191,7 @@ behavioral review.
 | State | Meaning | What it does not mean |
 |---|---|---|
 | **Watcher** | Reads public formation, builds and decisions | No governance right |
-| **Entrant** | Has a sealed Founding Ledger place | Not automatically a legal member |
+| **Entrant** | Has a sealed Founding Million place and Founding Right 0.1 | Not a legal member or shareholder |
 | **Continued** | Has a verified First Continuation connection | No extra vote or ownership |
 | **Tester** | Completes a real product task and supplies evidence | A reaction is not a test |
 | **Committer** | Makes an explicit conditional use or switch commitment | Not an unconditional promise |
@@ -340,7 +348,8 @@ The intended membership interest includes:
 - defined duties, conflicts and exit conditions.
 
 Until the legal entity and membership instrument exist, participation creates
-history and possible eligibility—not ownership.
+history and the operative project rights in Founding Right 0.1—not ownership,
+a share or a promise of profit.
 
 ### Adopted economic constraints
 
@@ -497,6 +506,8 @@ stewards. Run a concierge proof before generalizing cell infrastructure.
 - Ledger entry cannot depend on audience or successor.
 - A verified successor activates an edge.
 - No reservation, trading, tokens, referral votes or fake ownership.
+- A finite Founding Million with one equal, non-transferable Founding Right per
+  active place.
 - Canonical proposals and decisions live on OURS.
 - External networks distribute but do not govern.
 - Agents draft and build; humans hold authority.
@@ -508,7 +519,8 @@ stewards. Run a concierge proof before generalizing cell infrastructure.
 - A short founding declaration can be understood without a marketing page.
 - Structured responses are more useful than native generic comments.
 - A causal Build Tape is watchable enough to create daily return.
-- Constitution 1.0 ratification is the correct end of the Founding Era.
+- The transition from the closed Founding Million to Constitution 1.0 can be
+  completed without losing people or legitimacy.
 
 ### Future decisions
 

@@ -1588,3 +1588,1499 @@ main:has(> section + section) > .page-shell {
     grid-column: 2;
   }
 }
+
+/* ===========================================================================
+   THE FRONT PAGE
+   A document and a machine, side by side. The left half argues in paper and
+   ink; the right half is the protocol, running, and blocked on us.
+   =========================================================================== */
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  min-height: 100vh;
+}
+
+/* ---- Left: the argument ------------------------------------------------- */
+
+.split-say {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* The panel is pinned, so anything past the fold would be unreachable.
+     Capping and scrolling guarantees the argument is always readable, at any
+     window height, without the terminal losing its hold on the other half. */
+  max-height: 100vh;
+  overflow-y: auto;
+  /* Vertical padding and rhythm are capped in vh as well as vw: the panel has
+     to hold a fixed argument at any window height, so the spacing yields
+     before the words do. */
+  padding: min(clamp(22px, 3.4vw, 54px), 4.6vh) clamp(24px, 3.6vw, 66px);
+  background: var(--paper);
+  color: var(--ink);
+}
+.split-mark {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  margin: 0 0 auto;
+}
+.split-mark a {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  text-decoration: none;
+}
+.split-mark span {
+  font: 700 10px/1.2 var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--quiet);
+}
+.huge {
+  margin: min(clamp(20px, 4vw, 54px), 4vh) 0 0;
+  /* Width-driven, then capped by height: on a short laptop the headline must
+     yield rather than push the argument out of the pinned panel. */
+  font-size: min(clamp(48px, 6.6vw, 116px), 13.5vh);
+  font-weight: 900;
+  letter-spacing: -0.062em;
+  line-height: 0.87;
+  text-wrap: balance;
+}
+.hot {
+  color: var(--signal-ink);
+}
+.split-argument {
+  display: grid;
+  gap: min(17px, 1.9vh);
+  max-width: 46ch;
+  margin-top: min(clamp(18px, 2.6vw, 38px), 3vh);
+  font-size: clamp(14.5px, 1.05vw, 17px);
+  line-height: 1.5;
+}
+.split-argument p {
+  margin: 0;
+}
+.split-argument .big {
+  max-width: 20ch;
+  font-size: clamp(24px, 2.5vw, 41px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+.huge-small {
+  padding: min(14px, 1.6vh) 0 2px;
+  border-top: 2px solid var(--ink);
+  font-size: clamp(21px, 2.1vw, 34px);
+  font-weight: 900;
+  letter-spacing: -0.038em;
+  line-height: 1.04;
+}
+.split-status {
+  max-width: 46ch;
+  margin: auto 0 0;
+  padding-top: min(22px, 2.4vh);
+  border-top: 1px solid var(--line);
+  font: 11px/1.55 var(--mono);
+  letter-spacing: 0.01em;
+  color: var(--quiet);
+}
+.split-status b {
+  color: var(--signal-ink);
+  font-weight: 700;
+}
+
+/* ---- Right: the machine ------------------------------------------------- */
+
+.split-run {
+  min-height: 100vh;
+  background: var(--ink);
+}
+.terminal {
+  --signal-ink: var(--signal);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--mono);
+}
+.terminal[data-booted="false"] {
+  cursor: pointer;
+}
+.term-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px clamp(18px, 2.2vw, 34px);
+  border-bottom: 1px solid var(--paper-line);
+  background: var(--ink);
+  font: 700 10px/1.2 var(--mono);
+  letter-spacing: 0.1em;
+}
+.term-bar span:last-child {
+  color: var(--signal);
+}
+.term-body {
+  padding: clamp(22px, 2.6vw, 40px) clamp(18px, 2.2vw, 34px) 60px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.term-prompt {
+  color: var(--signal);
+  font-weight: 700;
+}
+.term-head {
+  margin: 0 0 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Boot diagnosis */
+.term-checks {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  max-width: 62ch;
+}
+.term-checks > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity 0.16s ease-out,
+    transform 0.16s ease-out;
+}
+.term-checks > div[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+.term-checks dt {
+  overflow: hidden;
+  color: var(--paper-quiet);
+  white-space: nowrap;
+}
+/* The dotted leader is drawn, not typed, so it stretches with the container. */
+.term-checks dt::after {
+  content: " ";
+  display: inline-block;
+  width: 100%;
+  margin-left: 8px;
+  border-bottom: 1px dotted var(--paper-line);
+  transform: translateY(-4px);
+}
+.term-checks dd {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.term-checks > div[data-tone="warn"] dd {
+  color: var(--signal);
+}
+.term-checks > div[data-tone="ok"] dd {
+  color: var(--acid);
+}
+
+.term-verdict {
+  max-width: 62ch;
+  margin-top: 26px;
+  opacity: 0;
+  transition: opacity 0.24s ease-out;
+}
+.term-verdict[data-shown="true"] {
+  opacity: 1;
+}
+.term-verdict p {
+  margin: 0 0 12px;
+  color: var(--paper-quiet);
+}
+.term-verdict b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--acid);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.term-ask {
+  margin-top: 20px !important;
+  color: var(--paper) !important;
+  font-weight: 700;
+}
+
+/* Target registry */
+.term-registry {
+  margin-top: 26px;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+.term-registry[data-shown="true"] {
+  opacity: 1;
+}
+.term-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--paper-line);
+  font: 700 9.5px/1.2 var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--paper-quiet);
+}
+.targets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.targets li + li {
+  border-top: 1px solid rgba(242, 239, 230, 0.13);
+}
+.target {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 96px 26px;
+  gap: 14px;
+  align-items: start;
+  width: 100%;
+  padding: 13px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-family: var(--mono);
+  cursor: pointer;
+}
+.target:hover .t-title strong,
+.target[aria-pressed="true"] .t-title strong {
+  color: var(--acid);
+}
+.t-num {
+  padding-top: 1px;
+  color: var(--signal);
+  font-size: 12px;
+  font-weight: 700;
+}
+.t-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.t-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 10px;
+}
+.t-title strong {
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.t-title em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--signal);
+}
+.t-practice {
+  max-width: 58ch;
+  color: var(--paper-quiet);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.t-count {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+  padding-top: 1px;
+}
+.t-count b {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.t-count b i {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--paper-quiet);
+}
+.t-bar {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: rgba(242, 239, 230, 0.18);
+}
+.t-bar span {
+  display: block;
+  height: 100%;
+  background: var(--acid);
+}
+.t-mark {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--paper-line);
+  font-size: 12px;
+  font-weight: 700;
+}
+.target[aria-pressed="true"] .t-mark {
+  border-color: var(--acid);
+  background: var(--acid);
+  color: var(--ink);
+}
+
+/* The prompt */
+.term-form {
+  margin-top: 30px;
+  padding-top: 22px;
+  border-top: 1px solid var(--paper-line);
+  max-width: 70ch;
+}
+.term-selected {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.term-selected .dim {
+  color: var(--paper-quiet);
+}
+.term-selected .hot {
+  color: var(--acid);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.term-field {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--paper-line);
+}
+.term-field:focus-within {
+  border-bottom-color: var(--acid);
+}
+.term-field input[type="email"] {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--paper);
+  font: 700 15px/1.4 var(--mono);
+}
+.term-field input:focus {
+  outline: none;
+}
+.term-field input::placeholder {
+  color: var(--paper-quiet);
+  font-weight: 400;
+  opacity: 1;
+}
+.term-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 13px 20px;
+  border: 0;
+  background: var(--acid);
+  color: var(--ink);
+  font: 700 13px/1 var(--mono);
+  letter-spacing: 0.09em;
+  cursor: pointer;
+}
+.term-go:hover:not(:disabled) {
+  background: var(--signal);
+  color: var(--paper);
+}
+.term-go:disabled {
+  background: rgba(242, 239, 230, 0.2);
+  color: var(--paper-quiet);
+  cursor: not-allowed;
+}
+.term-note {
+  max-width: 62ch;
+  margin: 16px 0 0;
+  color: var(--paper-quiet);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+.term-error {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.term-error[data-state="error"] {
+  color: var(--signal);
+}
+.term-status {
+  margin: 26px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--paper-line);
+  color: var(--paper-quiet);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+/* ---- The record --------------------------------------------------------- */
+
+.ledger-strip {
+  padding: clamp(30px, 4vw, 58px) clamp(24px, 3.6vw, 66px);
+  background: var(--paper);
+  border-top: 2px solid var(--ink);
+}
+.ledger-strip h2 {
+  margin: 0 0 18px;
+  font: 700 11px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.ledger-strip .term-prompt {
+  color: var(--signal-ink);
+}
+.record {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.record li {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 200px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: baseline;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  font: 12px/1.5 var(--mono);
+}
+.record li > b {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.record-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.record-notice {
+  color: var(--quiet);
+  overflow-wrap: anywhere;
+}
+.record-next > b,
+.record-next .record-notice {
+  color: var(--signal-ink);
+}
+.caret {
+  display: inline-block;
+  width: 10px;
+  height: 15px;
+  background: var(--signal-ink);
+  vertical-align: -2px;
+  animation: caret-blink 1.1s steps(2, end) infinite;
+}
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.thin-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px 26px;
+  padding: 18px clamp(24px, 3.6vw, 66px) 26px;
+  background: var(--ink);
+  color: var(--paper-quiet);
+  font: 700 9.5px/1.5 var(--mono);
+  letter-spacing: 0.09em;
+}
+.thin-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.thin-footer a {
+  color: var(--paper);
+  text-decoration: none;
+  border-bottom: 1px solid var(--paper-line);
+}
+.thin-footer a:hover {
+  color: var(--signal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+  .term-checks > div,
+  .term-verdict,
+  .term-registry {
+    transition: none;
+  }
+}
+
+@media (max-width: 1080px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+  .split-say {
+    position: static;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: clamp(34px, 6vw, 60px);
+  }
+  .split-argument {
+    max-width: 60ch;
+  }
+  .split-status {
+    margin-top: 26px;
+  }
+  .split-run,
+  .terminal {
+    min-height: 0;
+  }
+  .term-bar {
+    position: static;
+  }
+}
+
+@media (max-width: 620px) {
+  .target {
+    grid-template-columns: 32px minmax(0, 1fr) 24px;
+    grid-template-areas:
+      "num main mark"
+      ".   count count";
+    gap: 10px;
+  }
+  .t-num {
+    grid-area: num;
+  }
+  .t-main {
+    grid-area: main;
+  }
+  .t-count {
+    grid-area: count;
+    justify-items: start;
+    margin-top: 8px;
+  }
+  .t-mark {
+    grid-area: mark;
+  }
+  .t-bar {
+    width: 120px;
+  }
+  .record li {
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 6px 14px;
+  }
+  .record-notice {
+    grid-column: 2;
+  }
+}
+
+/* ---- What the demand is worth ------------------------------------------- */
+
+.term-value {
+  margin-top: 34px;
+  padding-top: 24px;
+  border-top: 1px solid var(--paper-line);
+}
+.value-slider {
+  display: block;
+  margin: 18px 0 20px;
+}
+.value-slider input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 26px;
+  background: transparent;
+  cursor: pointer;
+}
+.value-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  background: rgba(242, 239, 230, 0.24);
+}
+.value-slider input[type="range"]::-moz-range-track {
+  height: 3px;
+  background: rgba(242, 239, 230, 0.24);
+}
+.value-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 26px;
+  margin-top: -11px;
+  border: 0;
+  border-radius: 0;
+  background: var(--acid);
+}
+.value-slider input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 26px;
+  border: 0;
+  border-radius: 0;
+  background: var(--acid);
+}
+.value-slider input[type="range"]:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 4px;
+}
+.value-out {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+.value-out > div {
+  display: grid;
+  gap: 4px;
+}
+.value-out dt {
+  color: var(--paper-quiet);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.value-out dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.v-people {
+  font-size: clamp(30px, 3vw, 46px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.v-money {
+  font-size: clamp(21px, 2.2vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--acid);
+}
+.value-unlock {
+  max-width: 60ch;
+  margin: 20px 0 0;
+  color: var(--paper);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* ---- Earliness, stated ---------------------------------------------------- */
+
+.term-place {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.term-place b {
+  color: var(--acid);
+  font-size: 17px;
+  letter-spacing: 0.03em;
+}
+.term-place .dim {
+  color: var(--paper-quiet);
+}
+.t-first {
+  color: var(--signal) !important;
+  font-size: 10.5px !important;
+  letter-spacing: 0.09em;
+}
+
+/* ===========================================================================
+   THE FOUNDING MILLION
+   One message, one finite counter, one action. Everything deeper remains in
+   the public record but does not compete with the decision to enter.
+   =========================================================================== */
+
+/* The palette and the ground belong to the whole founding surface, not to the
+   homepage alone: the entry flow (.fm-flow) is the same project and must not
+   change appearance at the moment a person decides to trust it. */
+.fm-home,
+.fm-flow {
+  --fm-green: #cfff4a;
+  --fm-red: #ff4b1f;
+  --fm-paper: #f2efe6;
+  --fm-dim: rgba(242, 239, 230, 0.58);
+  --fm-line: rgba(242, 239, 230, 0.2);
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background:
+    linear-gradient(rgba(242, 239, 230, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(242, 239, 230, 0.025) 1px, transparent 1px), var(--ink);
+  background-size: 40px 40px;
+  color: var(--fm-paper);
+}
+
+/* The one-screen homepage exists only in the two-column layout. Below that the
+   page stacks and scrolls like any other, so none of this may apply there.
+   `height`, not `min-height`: with min-height the 1fr row grows to fit its
+   content and pushes the footer past the hidden overflow, which put the legal
+   boundary line off-screen with no way to scroll to it. A fixed height makes
+   1fr a real constraint, and each column absorbs the pressure itself —
+   `safe` centring so a column that overflows does it downward, leaving the
+   top of the headline reachable rather than cut against the topline. */
+@media (min-width: 981px) {
+  .fm-home {
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .fm-message,
+  .fm-terminal-body {
+    justify-content: safe center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* The entry sections already paint themselves ink. On the founding ground
+   that reads as a panel rather than a patch, so the border does the work. */
+.fm-flow .entry-instrument,
+.fm-flow .page-shell.ink {
+  background: transparent;
+}
+
+.fm-flow main {
+  min-width: 0;
+}
+
+/* The entry headings speak in the founding voice rather than the Day 1
+   editorial one, so the step a person is on never reads as another site. */
+.fm-flow .entry-copy h2,
+.fm-flow .confirm-hero h1 {
+  font-size: clamp(30px, 3.6vw, 54px);
+  letter-spacing: -0.05em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.fm-flow .entry-panel,
+.fm-flow .entry-instrument,
+.fm-flow .page-shell.ink {
+  border-color: var(--fm-line);
+}
+
+/* The address field had no styling of its own and fell back to the browser's
+   default box, which is the one control on the page a person must trust. */
+.fm-flow input[type="email"],
+.fm-flow input[type="text"] {
+  width: 100%;
+  padding: 15px 16px;
+  border: 1px solid var(--fm-line);
+  border-radius: 0;
+  background: rgba(242, 239, 230, 0.05);
+  color: var(--fm-paper);
+  font: 15px/1.2 var(--mono);
+}
+
+.fm-flow input[type="email"]::placeholder,
+.fm-flow input[type="text"]::placeholder {
+  color: var(--fm-dim);
+}
+
+.fm-flow input[type="email"]:focus-visible,
+.fm-flow input[type="text"]:focus-visible {
+  border-color: var(--fm-green);
+  outline: 2px solid var(--fm-green);
+  outline-offset: 1px;
+}
+
+.fm-flow .action-button {
+  border-color: var(--fm-green);
+  background: var(--fm-green);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.fm-flow .action-button:hover:not(:disabled) {
+  border-color: var(--fm-red);
+  background: var(--fm-red);
+  color: var(--fm-paper);
+}
+
+.fm-flow .field-note,
+.fm-flow .neutral-note {
+  color: var(--fm-dim);
+}
+
+.fm-topline,
+.fm-footer {
+  display: grid;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+  font: 700 9.5px/1.35 var(--mono);
+  letter-spacing: 0.1em;
+}
+
+.fm-topline {
+  grid-template-columns: auto 1fr auto;
+  min-height: 58px;
+  padding: 9px clamp(18px, 2.5vw, 40px);
+  border-bottom: 1px solid var(--fm-line);
+}
+
+.fm-logo {
+  color: var(--fm-paper);
+  font: 900 30px/1 var(--sans);
+  letter-spacing: -0.075em;
+  text-decoration: none;
+}
+
+.fm-topline p,
+.fm-footer p {
+  margin: 0;
+}
+
+.fm-topline p {
+  color: var(--fm-dim);
+}
+
+.fm-topline p i,
+.fm-terminal-bar i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--fm-red);
+  box-shadow: 0 0 0 0 rgba(255, 75, 31, 0.5);
+  animation: fm-pulse 1.8s steps(2, end) infinite;
+}
+
+.fm-topline nav,
+.fm-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.fm-topline a,
+.fm-footer a {
+  text-decoration: none;
+}
+
+.fm-topline nav a,
+.fm-footer nav a {
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--fm-line);
+}
+
+.fm-topline nav a:hover,
+.fm-footer nav a:hover {
+  border-color: var(--fm-green);
+  color: var(--fm-green);
+}
+
+.fm-stage {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(430px, 0.82fr);
+}
+
+.fm-stage > * {
+  min-width: 0;
+}
+
+.fm-message {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(28px, 4.4vw, 74px);
+  border-right: 1px solid var(--fm-line);
+}
+
+.fm-kicker,
+.fm-opportunity {
+  margin: 0;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.fm-kicker {
+  color: var(--fm-green);
+  font-size: clamp(10px, 0.8vw, 12px);
+}
+
+.fm-message h1 {
+  max-width: 9.4em;
+  margin: clamp(18px, 3.3vh, 44px) 0;
+  color: var(--fm-paper);
+  font-size: min(clamp(58px, 7.25vw, 118px), 13.5vh);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.82;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.fm-message h1 span {
+  display: block;
+}
+
+.fm-message h1 .signal {
+  margin-top: 0.16em;
+  color: var(--fm-red);
+}
+
+.fm-opportunity {
+  max-width: 54ch;
+  color: var(--fm-paper);
+  font-size: clamp(11px, 1vw, 15px);
+  line-height: 1.65;
+}
+
+/* The object of the verb. Without a named target, "leaves" is a mood. */
+.fm-first {
+  display: grid;
+  gap: 3px;
+  max-width: 54ch;
+  margin: clamp(14px, 2vh, 24px) 0 0;
+  padding-top: clamp(12px, 1.6vh, 18px);
+  border-top: 1px solid var(--fm-line);
+  font-family: var(--mono);
+}
+
+.fm-first span {
+  color: var(--fm-green);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.fm-first b {
+  color: var(--fm-paper);
+  font-size: clamp(14px, 1.5vw, 21px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+}
+
+.fm-first em {
+  color: var(--fm-dim);
+  font-size: clamp(10px, 0.95vw, 13px);
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+.fm-terminal {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--mono);
+}
+
+.fm-terminal-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px clamp(18px, 2.4vw, 34px);
+  border-bottom: 1px solid var(--fm-line);
+  color: var(--fm-dim);
+  font: 700 9px/1.25 var(--mono);
+  letter-spacing: 0.08em;
+}
+
+.fm-terminal-bar span:last-child {
+  color: var(--fm-red);
+  text-align: right;
+}
+
+.fm-terminal-bar span.is-live {
+  color: var(--fm-green);
+}
+
+.fm-terminal-bar span.is-live i {
+  background: var(--fm-green);
+  box-shadow: 0 0 0 0 rgba(207, 255, 74, 0.5);
+}
+
+.fm-terminal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  padding: clamp(22px, 3vw, 44px) clamp(18px, 2.7vw, 40px);
+}
+
+.fm-command {
+  margin: 0 0 clamp(14px, 2.3vh, 24px);
+  font: 700 11px/1.4 var(--mono);
+  letter-spacing: 0.03em;
+}
+
+.fm-command span,
+.fm-entry-row > span {
+  color: var(--fm-red);
+}
+
+.fm-scan {
+  display: grid;
+  gap: 5px;
+  margin-bottom: clamp(18px, 2.6vh, 28px);
+}
+
+.fm-scan p {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  margin: 0;
+  color: var(--fm-dim);
+  font: 10px/1.4 var(--mono);
+  letter-spacing: 0.06em;
+}
+
+.fm-scan p span {
+  display: flex;
+  align-items: baseline;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fm-scan p span::after {
+  content: "";
+  flex: 1;
+  min-width: 20px;
+  margin-left: 8px;
+  border-bottom: 1px dotted var(--fm-line);
+  transform: translateY(-3px);
+}
+
+.fm-scan b {
+  color: var(--fm-green);
+  font-weight: 700;
+}
+
+.fm-scan .blocked b {
+  color: var(--fm-red);
+}
+
+.fm-scan .aimed b {
+  color: var(--fm-paper);
+}
+
+.fm-counter {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--fm-line);
+}
+
+.fm-counter div {
+  min-width: 0;
+  padding: clamp(12px, 1.5vw, 20px);
+}
+
+.fm-counter div + div {
+  border-left: 1px solid var(--fm-line);
+}
+
+.fm-counter dt,
+.fm-form label {
+  color: var(--fm-dim);
+  font: 700 8.5px/1.2 var(--mono);
+  letter-spacing: 0.1em;
+}
+
+.fm-counter dd {
+  margin: 7px 0 0;
+  overflow: hidden;
+  color: var(--fm-paper);
+  font: 700 clamp(18px, 2vw, 32px)/1 var(--mono);
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+}
+
+.fm-counter .next dd {
+  color: var(--fm-green);
+}
+
+.fm-right {
+  margin-top: clamp(16px, 2.4vh, 25px);
+  padding: 0 0 clamp(15px, 2.2vh, 23px);
+  border-bottom: 1px solid var(--fm-line);
+}
+
+.fm-right p {
+  margin: 0 0 5px;
+  color: var(--fm-paper);
+  font: 700 clamp(13px, 1.1vw, 17px)/1.3 var(--mono);
+  letter-spacing: 0.04em;
+}
+
+.fm-right span {
+  color: var(--fm-green);
+  font: 700 9px/1.5 var(--mono);
+  letter-spacing: 0.07em;
+}
+
+.fm-form {
+  margin-top: clamp(16px, 2.3vh, 24px);
+}
+
+.fm-form > label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.fm-entry-row {
+  display: grid;
+  grid-template-columns: auto minmax(80px, 1fr) auto;
+  align-items: stretch;
+  border: 1px solid var(--fm-line);
+}
+
+.fm-entry-row > span {
+  display: grid;
+  place-items: center;
+  padding-left: 13px;
+  font: 700 15px/1 var(--mono);
+}
+
+.fm-entry-row input {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 13px 11px;
+  outline: 0;
+  background: transparent;
+  color: var(--fm-paper);
+  font: 700 13px/1.2 var(--mono);
+}
+
+.fm-entry-row input::placeholder {
+  color: var(--fm-dim);
+  font-weight: 400;
+  opacity: 1;
+}
+
+.fm-entry-row:focus-within {
+  border-color: var(--fm-green);
+}
+
+.fm-entry-row button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 190px;
+  border: 0;
+  border-left: 1px solid var(--fm-line);
+  padding: 11px 14px;
+  background: var(--fm-green);
+  color: var(--ink);
+  font: 700 10px/1.2 var(--mono);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.fm-entry-row button:hover:not(:disabled) {
+  background: var(--fm-red);
+  color: var(--fm-paper);
+}
+
+.fm-entry-row button:disabled {
+  background: rgba(242, 239, 230, 0.14);
+  color: var(--fm-dim);
+  cursor: not-allowed;
+}
+
+.fm-form-note,
+.fm-error,
+.fm-urgency {
+  font-family: var(--mono);
+}
+
+.fm-form-note {
+  margin: 8px 0 0;
+  color: var(--fm-dim);
+  font-size: 8.5px;
+  line-height: 1.45;
+}
+
+.fm-error {
+  min-height: 1.3em;
+  margin: 5px 0 0;
+  color: var(--fm-red);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.fm-urgency {
+  margin: auto 0 0;
+  padding-top: clamp(12px, 2vh, 20px);
+  color: var(--fm-red);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.5;
+}
+
+.fm-footer {
+  grid-template-columns: 1fr auto;
+  min-height: 46px;
+  padding: 9px clamp(18px, 2.5vw, 40px);
+  border-top: 1px solid var(--fm-line);
+  color: var(--fm-dim);
+  /* The legal boundary is the last thing that should be hard to read. */
+  font-size: 10px;
+}
+
+@keyframes fm-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-topline p i,
+  .fm-terminal-bar i {
+    animation: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .fm-home {
+    overflow: visible;
+  }
+  .fm-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fm-message {
+    min-height: min(48svh, 470px);
+    border-right: 0;
+    border-bottom: 1px solid var(--fm-line);
+  }
+  .fm-message h1 {
+    max-width: 12em;
+    font-size: clamp(54px, 10.6vw, 92px);
+  }
+  .fm-terminal-body {
+    min-height: 490px;
+  }
+}
+
+@media (max-width: 620px) {
+  .fm-topline {
+    min-height: 50px;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+  }
+  .fm-logo {
+    font-size: 26px;
+  }
+  .fm-topline p {
+    justify-self: end;
+    font-size: 8px;
+    text-align: right;
+  }
+  .fm-topline nav {
+    display: none;
+  }
+  .fm-message {
+    min-height: 0;
+    padding: 22px 18px;
+  }
+  .fm-message h1 {
+    max-width: 8.8em;
+    margin: 16px 0;
+    font-size: clamp(44px, 12.8vw, 59px);
+    line-height: 0.84;
+  }
+  .fm-opportunity {
+    font-size: 9.5px;
+    line-height: 1.55;
+  }
+  .fm-terminal-bar {
+    padding: 10px 18px;
+    font-size: 7.5px;
+  }
+  .fm-terminal-body {
+    min-height: 0;
+    padding: 16px 18px 18px;
+  }
+  /* The prompt is decoration and goes. The scan is the argument — why any of
+     this is possible now — and hiding it left phone visitors with a counter
+     and no reason, which is most of the traffic from a shared link. */
+  .fm-command {
+    display: none;
+  }
+  .fm-scan {
+    margin-bottom: 16px;
+  }
+  .fm-scan p {
+    font-size: 9px;
+  }
+  .fm-counter div {
+    padding: 12px 10px;
+  }
+  .fm-counter dd {
+    font-size: clamp(16px, 5vw, 21px);
+  }
+  .fm-right {
+    margin-top: 15px;
+    padding-bottom: 14px;
+  }
+  .fm-right p {
+    font-size: 12px;
+  }
+  .fm-right span {
+    font-size: 7.5px;
+  }
+  .fm-form {
+    margin-top: 14px;
+  }
+  .fm-entry-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .fm-entry-row button {
+    grid-column: 1 / -1;
+    min-width: 0;
+    border-top: 1px solid var(--fm-line);
+    border-left: 0;
+    padding: 12px 13px;
+  }
+  .fm-urgency {
+    margin-top: 0;
+    padding-top: 10px;
+    font-size: 7.5px;
+  }
+  .fm-footer {
+    min-height: 40px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 9px 18px;
+  }
+  .fm-footer p {
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .fm-footer nav {
+    display: none;
+  }
+}
+
+/* Target choice belongs after entry, where it cannot compete with joining. */
+.post-entry-missions {
+  margin-top: 34px;
+  padding-top: 24px;
+  border-top: 2px solid var(--paper);
+  color: var(--paper);
+}
+
+.post-entry-missions .post-entry-step {
+  margin: 0 0 9px;
+  color: var(--acid);
+  font: 700 9px/1.4 var(--mono);
+  letter-spacing: 0.09em;
+}
+
+.post-entry-missions h3 {
+  margin: 0;
+  font-size: clamp(22px, 2.4vw, 34px);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.post-entry-missions .post-entry-intro,
+.post-entry-missions.complete > p:not(.post-entry-step) {
+  margin: 11px 0 0;
+  color: var(--paper-quiet);
+  font: 11px/1.55 var(--mono);
+}
+
+.post-entry-missions form {
+  padding-top: 18px;
+}
+
+.post-entry-missions ul {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--paper-line);
+  list-style: none;
+}
+
+.post-entry-missions li {
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.post-entry-missions li button {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "mark title count"
+    "mark incumbent count";
+  gap: 3px 10px;
+  align-items: center;
+  width: 100%;
+  padding: 11px 0;
+  border: 0;
+  background: transparent;
+  color: var(--paper);
+  text-align: left;
+  cursor: pointer;
+}
+
+.post-entry-missions li button > span {
+  grid-area: mark;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--paper-line);
+  font: 700 10px/1 var(--mono);
+}
+
+.post-entry-missions li button > b {
+  grid-area: title;
+  font: 700 12px/1.3 var(--mono);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.post-entry-missions li button > em {
+  grid-area: incumbent;
+  color: var(--paper-quiet);
+  font: 10px/1.3 var(--mono);
+}
+
+.post-entry-missions li button > small {
+  grid-area: count;
+  color: var(--paper-quiet);
+  font: 9px/1.3 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.post-entry-missions li button[aria-pressed="true"] > span {
+  border-color: var(--acid);
+  background: var(--acid);
+  color: var(--ink);
+}
+
+.post-entry-missions li button[aria-pressed="true"] > b {
+  color: var(--acid);
+}
+
+.post-entry-missions.complete .small-button {
+  margin-top: 18px;
+}

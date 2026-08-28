@@ -19,6 +19,8 @@ export type ImplementedEventType =
   | "ledger.entry.withdrawn"
   | "ledger.entry.review_opened"
   | "ledger.entry.voided"
+  | "notice.given"
+  | "notice.withdrawn"
   | "relay.issued"
   | "relay.revoked"
   | "relay.arrival.recorded"

@@ -1,6 +1,11 @@
 import { config } from "@/config";
 import { getSql, jsonParam, toDate, tsParam, type DbTimestamp, type OurSql } from "@/db/sqltype";
 import { currentDocumentVersions } from "@/legal/documents";
+import {
+  capacityFromNextOrdinal,
+  FOUNDING_RIGHT_VERSION,
+  type FoundingCapacity,
+} from "@/founding/right";
 import { digestEvent } from "./events";
 
 export type LedgerMode = "CLOSED" | "OPEN" | "PAUSED";
@@ -12,6 +17,7 @@ export interface SystemStateView {
   protocolVersion: string;
   legalStatusVersion: string;
   privacyVersion: string;
+  nextOrdinal: number | null;
   changedAt: Date;
 }
 
@@ -23,10 +29,11 @@ export async function readSystemState(): Promise<SystemStateView> {
       protocol_version: string;
       legal_status_version: string;
       privacy_version: string;
+      next_ordinal: number | null;
       changed_at: DbTimestamp;
     }[]
   >(
-    "SELECT mode, declaration_version, protocol_version, legal_status_version, privacy_version, changed_at FROM ledger.system_state WHERE id = 1",
+    "SELECT s.mode, s.declaration_version, s.protocol_version, s.legal_status_version, s.privacy_version, c.next_ordinal, s.changed_at FROM ledger.system_state s LEFT JOIN ledger.ordinal_counter c ON c.id = s.id WHERE s.id = 1",
   );
   const row = rows[0];
   let cfgWrites = false;
@@ -42,6 +49,7 @@ export async function readSystemState(): Promise<SystemStateView> {
     protocolVersion: row?.protocol_version ?? "",
     legalStatusVersion: row?.legal_status_version ?? "",
     privacyVersion: row?.privacy_version ?? "",
+    nextOrdinal: row?.next_ordinal ?? null,
     changedAt: row?.changed_at ? toDate(row.changed_at) : new Date(0),
   };
 }
@@ -50,6 +58,8 @@ export async function readSystemState(): Promise<SystemStateView> {
 export async function foundingState(): Promise<{
   ledgerState: "CLOSED" | "OPEN" | "PAUSED";
   canAcceptEntries: boolean;
+  capacity: FoundingCapacity;
+  capacityAvailable: boolean;
   statusLine: string;
   versions: Record<string, string>;
 }> {
@@ -61,19 +71,27 @@ export async function foundingState(): Promise<{
     return {
       ledgerState: "CLOSED",
       canAcceptEntries: false,
+      capacity: capacityFromNextOrdinal(null),
+      capacityAvailable: false,
       statusLine: "OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED",
-      versions: currentDocumentVersions() as unknown as Record<string, string>,
+      versions: { ...currentDocumentVersions(), foundingRight: FOUNDING_RIGHT_VERSION },
     };
   }
   return {
     ledgerState: state.mode,
-    canAcceptEntries: state.mode === "OPEN" && state.writesAllowedByEnvironment,
+    canAcceptEntries:
+      state.mode === "OPEN" &&
+      state.writesAllowedByEnvironment &&
+      !capacityFromNextOrdinal(state.nextOrdinal).full,
+    capacity: capacityFromNextOrdinal(state.nextOrdinal),
+    capacityAvailable: state.nextOrdinal !== null,
     statusLine: "OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED",
     versions: {
       declaration: state.declarationVersion,
       protocol: state.protocolVersion,
       legalStatus: state.legalStatusVersion,
       privacyNotice: state.privacyVersion,
+      foundingRight: FOUNDING_RIGHT_VERSION,
     },
   };
 }

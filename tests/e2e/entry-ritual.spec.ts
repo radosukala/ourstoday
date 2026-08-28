@@ -62,6 +62,8 @@ test.describe("the entry ritual", () => {
     ).toBeVisible();
     // The member root is shown to the entrant and is never a public field.
     const receipt = page.locator("article.receipt-block").first();
+    await expect(receipt).toContainText(/FOUNDING RIGHT/i);
+    await expect(receipt).toContainText(/ours-founding-right\/0\.1/i);
     await expect(receipt).toContainText(/MEMBER ROOT/i);
     await expect(page.getByRole("button", { name: /copy member root/i })).toBeVisible();
 
@@ -70,6 +72,14 @@ test.describe("the entry ritual", () => {
     const relayUrl = await relayUrlFromReceipt(page);
     expect(relayUrl).toContain("/r/");
     await expect(page.getByRole("button", { name: /copy relay url/i })).toBeVisible();
+
+    // Target choice is a second, authenticated act after the place and its
+    // rights are already safe. It never blocks or changes the entry.
+    const missions = page.locator(".post-entry-missions");
+    await expect(missions).toContainText(/YOUR PLACE IS SAFE/i);
+    await missions.locator("li button").first().click();
+    await missions.getByRole("button", { name: /give notice/i }).click();
+    await expect(missions).toContainText(/NOTICE RECORDED/i);
   });
 
   test("an already-sealed person cannot seal twice", async ({ page }) => {

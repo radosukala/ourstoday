@@ -5,7 +5,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type postgres from "postgres";
-import { requireDatabaseUrl } from "../env";
+import { announceTarget, requireDatabaseUrl, takeProfile } from "../env";
 import { connect } from "./dbadmin";
 
 const MIGRATIONS_DIR = path.join(process.cwd(), "src", "db", "migrations");
@@ -39,7 +39,14 @@ export async function migrate(sql: postgres.Sql): Promise<string[]> {
 }
 
 async function main() {
-  const url = requireDatabaseUrl("db:migrate");
+  // `--production` selects .env.production.local, the same way conformance and
+  // db:reset already do. Without it this command silently used .env.local,
+  // which meant migrating production could only be done by exporting variables
+  // into the shell — exactly the invisible-target failure this repo already
+  // records having made three times.
+  const { profile } = takeProfile(process.argv.slice(2));
+  const url = requireDatabaseUrl("db:migrate", profile);
+  announceTarget("db:migrate");
   // DROP ... IF EXISTS emits a NOTICE per object. Dozens of them bury the one
   // line that matters when a migration actually fails.
   const sql = connect(url, { max: 1, onnotice: () => {} });

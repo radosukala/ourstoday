@@ -73,11 +73,16 @@ export function formatOrdinal(ordinal: number): string {
  * The current open case. A founder-steward maintained constant until
  * canonical proposals exist (Phase B); updating it is an edit with a diff,
  * not a database write.
+ *
+ * The previous open case asked when the Founding Era ends. Amendment 0.1
+ * answered it — at #1,000,000, enforced by the allocator rather than by
+ * copy — so leaving it on the board would have been the site asking a
+ * question its own database had already settled.
  */
 export const OPEN_CASE = {
   id: "P-0001",
-  title: "When does the Founding Era end?",
-  url: "https://ourstoday.com/#decision",
+  title: "What does OURS build first?",
+  url: "https://ourstoday.com/#first",
 } as const;
 
 export interface EditionInputs {

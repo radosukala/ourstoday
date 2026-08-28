@@ -120,8 +120,8 @@ export function notRun(command: string, why: string): never {
 }
 
 /** The direct connection URL, or NOT RUN when nothing is configured. */
-export function requireDatabaseUrl(command: string): string {
-  loadEnv();
+export function requireDatabaseUrl(command: string, profile?: "production"): string {
+  loadEnv(profile);
   const url = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
   if (!url) {
     notRun(command, "DIRECT_DATABASE_URL / DATABASE_URL is not set (see .env.example)");

@@ -26,7 +26,7 @@ describe("idempotent sealing", () => {
       authUserId: person.authUserId,
       displayName: "Idem Potent",
       acceptedVersions: {
-        declaration: "ours-founding-declaration/0.1",
+        declaration: "ours-founding-declaration/0.2",
         constitution: "ours-founding-constitution/0.1",
         protocol: "ours.founding-relay/0.1",
         privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -38,7 +38,7 @@ describe("idempotent sealing", () => {
       authUserId: person.authUserId,
       displayName: "Idem Potent",
       acceptedVersions: {
-        declaration: "ours-founding-declaration/0.1",
+        declaration: "ours-founding-declaration/0.2",
         constitution: "ours-founding-constitution/0.1",
         protocol: "ours.founding-relay/0.1",
         privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -69,7 +69,7 @@ describe("idempotent sealing", () => {
       authUserId: person.authUserId,
       displayName: "Original Name",
       acceptedVersions: {
-        declaration: "ours-founding-declaration/0.1",
+        declaration: "ours-founding-declaration/0.2",
         constitution: "ours-founding-constitution/0.1",
         protocol: "ours.founding-relay/0.1",
         privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -86,7 +86,7 @@ describe("idempotent sealing", () => {
         authUserId: person.authUserId,
         displayName: "Different Name",
         acceptedVersions: {
-          declaration: "ours-founding-declaration/0.1",
+          declaration: "ours-founding-declaration/0.2",
           constitution: "ours-founding-constitution/0.1",
           protocol: "ours.founding-relay/0.1",
           privacyNotice: "ours-privacy-notice-draft/0.1",

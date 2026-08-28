@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { sealEntry } from "@/ledger/seal";
 import {
   AlreadySealedError,
+  FoundingEraFullError,
   IdempotencyConflictError,
   InvalidRelayError,
   InvalidWitnessError,
@@ -16,6 +17,7 @@ import {
   StaleConsentError,
 } from "@/ledger/errors";
 import { jsonError, jsonOk } from "@/lib/http";
+import { parseNoticeIntent } from "@/lib/notice-intent";
 import { sealRequestSchema } from "@/validation/schemas";
 
 export const dynamic = "force-dynamic";
@@ -69,10 +71,20 @@ export async function POST(req: Request) {
   if (!limited.allowed)
     return jsonError("RATE_LIMITED", "Too many attempts. Try again later.", 429);
 
+  const cookieHeader = req.headers.get("cookie");
   const predecessor = await resolvePredecessorForSeal({
     personId: person.id,
-    cookieHeader: req.headers.get("cookie"),
+    cookieHeader,
   });
+
+  // What this person came here to say, carried across the magic link. The
+  // request body wins when it carries slugs; the cookie is the fallback for
+  // the ordinary path, where the selection was made before the round trip
+  // through email.
+  const noticeSlugs =
+    parsed.data.noticeSlugs && parsed.data.noticeSlugs.length > 0
+      ? parsed.data.noticeSlugs
+      : parseNoticeIntent(cookieHeader);
 
   try {
     const result = await sealEntry({
@@ -84,6 +96,7 @@ export async function POST(req: Request) {
       ...(parsed.data.witnessOrdinal !== undefined
         ? { witnessOrdinal: parsed.data.witnessOrdinal }
         : {}),
+      ...(noticeSlugs.length > 0 ? { noticeSlugs } : {}),
     });
 
     // The public pages are cached to keep a crawler from holding the database
@@ -114,11 +127,15 @@ export async function POST(req: Request) {
         result.witnessOrdinal !== undefined ? String(result.witnessOrdinal).padStart(6, "0") : null,
       // The member's own stable identifier. Returned to them, never public.
       memberRoot: result.memberRoot,
+      foundingRightVersion: result.foundingRightVersion,
       receipt: result.receipt,
       relayUrl,
       legalStatusLine: "OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED",
     });
   } catch (error) {
+    if (error instanceof FoundingEraFullError) {
+      return jsonError("FOUNDING_ERA_FULL", error.message, 410);
+    }
     if (error instanceof LedgerClosedError) {
       return jsonError(
         error.mode === "PAUSED" ? "LEDGER_PAUSED" : "LEDGER_CLOSED",

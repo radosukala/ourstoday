@@ -128,7 +128,7 @@ describe("safe public projections", () => {
       authUserId: person.authUserId,
       displayName: "Vanishing Person",
       acceptedVersions: {
-        declaration: "ours-founding-declaration/0.1",
+        declaration: "ours-founding-declaration/0.2",
         constitution: "ours-founding-constitution/0.1",
         protocol: "ours.founding-relay/0.1",
         privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -162,7 +162,7 @@ describe("safe public projections", () => {
       authUserId: nextPerson.authUserId,
       displayName: "After Withdrawal",
       acceptedVersions: {
-        declaration: "ours-founding-declaration/0.1",
+        declaration: "ours-founding-declaration/0.2",
         constitution: "ours-founding-constitution/0.1",
         protocol: "ours.founding-relay/0.1",
         privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -193,7 +193,7 @@ describe("safe public projections", () => {
       authUserId: person.authUserId,
       displayName: "Typo Namee",
       acceptedVersions: {
-        declaration: "ours-founding-declaration/0.1",
+        declaration: "ours-founding-declaration/0.2",
         constitution: "ours-founding-constitution/0.1",
         protocol: "ours.founding-relay/0.1",
         privacyNotice: "ours-privacy-notice-draft/0.1",
@@ -241,7 +241,7 @@ describe("safe public projections", () => {
       authUserId: person.authUserId,
       displayName: "Bad Actor",
       acceptedVersions: {
-        declaration: "ours-founding-declaration/0.1",
+        declaration: "ours-founding-declaration/0.2",
         constitution: "ours-founding-constitution/0.1",
         protocol: "ours.founding-relay/0.1",
         privacyNotice: "ours-privacy-notice-draft/0.1",

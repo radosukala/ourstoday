@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Masthead } from "@/components/Masthead";
 import { getPublicEntry } from "@/ledger/queries";
 import { STATUS_LINE } from "@/legal/documents";
+import { FOUNDING_RIGHT_VERSION } from "@/founding/right";
 
 /**
  * Cached, not dynamic, and this is a cost control.
@@ -86,6 +87,10 @@ export default async function EntryPage({ params }: { params: Promise<{ ordinal:
               <div className="receipt-line">
                 <dt>PUBLIC STATUS</dt>
                 <dd>{entry.publicStatus}</dd>
+              </div>
+              <div className="receipt-line">
+                <dt>FOUNDING RIGHT</dt>
+                <dd>{FOUNDING_RIGHT_VERSION}</dd>
               </div>
               <div className="receipt-line">
                 <dt>LEGAL MEMBERSHIP</dt>

@@ -59,9 +59,14 @@ test.describe("the escalated instrument", () => {
     // Saying so on the receipt is the whole reward the witness receives.
     await expect(receipt).toContainText(/they gained nothing/i);
 
-    // The public ledger shows the edge and confers no rank on the witness.
-    await page.goto("/");
-    await expect(page.locator(".ledger-table")).toContainText("Witnessed Entrant");
+    // The public receipt shows the entry without conferring any rank or public
+    // reward on the witness. The homepage is intentionally no longer a table.
+    const publicReceiptHref = await receipt
+      .getByRole("link", { name: /view public receipt/i })
+      .getAttribute("href");
+    expect(publicReceiptHref).toMatch(/^\/e\/\d+$/);
+    await page.goto(publicReceiptHref as string);
+    await expect(page.locator("body")).toContainText("Witnessed Entrant");
   });
 
   test("health is shallow by default and deep only on request", async ({ request, baseURL }) => {
@@ -87,7 +92,7 @@ test.describe("the escalated instrument", () => {
     }
   });
 
-  test("a sealed entry appears on the public ledger immediately, not after the cache window", async ({
+  test("a sealed entry advances the public counter immediately, not after the cache window", async ({
     page,
   }) => {
     // The public pages are cached so a crawler cannot hold the database awake.
@@ -112,8 +117,15 @@ test.describe("the escalated instrument", () => {
     await page.getByRole("button", { name: /seal/i }).click();
     await expect(page.locator("article.receipt-block").first()).toBeVisible({ timeout: 20000 });
 
+    const receiptLink = page.getByRole("link", { name: /view public receipt/i });
+    const href = await receiptLink.getAttribute("href");
+    const ordinal = Number(href?.split("/").pop());
+    expect(ordinal).toBeGreaterThan(0);
+
     await page.goto("/");
-    await expect(page.locator(".ledger-table")).toContainText(name);
+    await expect(page.locator(".fm-counter .next dd")).toHaveText(
+      "#" + String(ordinal + 1).padStart(6, "0"),
+    );
   });
 
   test("refusing to seal moves focus to what is blocking, not just a message", async ({ page }) => {
@@ -172,11 +184,11 @@ test.describe("the escalated instrument", () => {
     expect(body).not.toMatch(/IMPLEMENTED · NOT LIVE/i);
 
     // And it says what IS true instead.
-    expect(body).toMatch(/PUBLIC · OPEN FOR ENTRY/i);
-    expect(body).toMatch(/CANONICAL FOUNDING LEDGER/i);
+    expect(body).toMatch(/ACCEPTING PEOPLE/i);
+    expect(body).toMatch(/OURS:\/\/FOUNDING_MILLION/i);
 
     // The qualifier that must survive every state stays put.
-    expect(body).toMatch(/OWNERSHIP: COMMITTED · LEGAL MEMBERSHIP: NOT YET ISSUED/);
+    expect(body).toMatch(/LEGAL MEMBERSHIP NOT YET ISSUED/);
   });
 
   test("participation is published without any visitor being measured", async ({

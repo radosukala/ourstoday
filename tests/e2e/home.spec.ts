@@ -5,10 +5,14 @@ import { emailField } from "./helpers";
 test.describe("the public instrument", () => {
   test("renders the truthful founding state", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("THE NETWORK IS OURS");
-    await expect(page.getByText("OWNERSHIP: COMMITTED")).toHaveCount(1);
-    // Origin row visible from the seeded local concept data.
-    await expect(page.locator("table, [role=table], .ledger-table").first()).toContainText("RADO");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("NOBODY LEAVES FIRST.");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "EVERYBODY LEAVES TOGETHER.",
+    );
+    await expect(page.getByText("ONE PERSON. ONE FOUNDING RIGHT.")).toHaveCount(1);
+    await expect(page.getByText("LEGAL MEMBERSHIP NOT YET ISSUED")).toHaveCount(1);
+    await expect(page.getByLabel("Live Founding Million state")).toContainText("LEFT");
+    await expect(page.getByLabel("Your email")).toHaveCount(1);
   });
 
   test("status page reflects gate state without exposing private data", async ({ page }) => {
@@ -20,6 +24,8 @@ test.describe("the public instrument", () => {
   test("source documents are reachable and traversal is not", async ({ page }) => {
     await page.goto("/source/CONSTITUTION-0.1.md");
     await expect(page.locator("body")).toContainText("# ");
+    await page.goto("/source/FOUNDING-RIGHT-0.1.md");
+    await expect(page.locator("body")).toContainText("Ordinals 1 through 1,000,000 only");
     // The operations package is published with its unanswered questions.
     await page.goto("/source/operations/DATA-MAP.md");
     await expect(page.locator("body")).toContainText("NOT LEGALLY REVIEWED");

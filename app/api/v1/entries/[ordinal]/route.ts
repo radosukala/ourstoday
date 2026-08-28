@@ -1,6 +1,7 @@
 import { getPublicEntry } from "@/ledger/queries";
 import { jsonError, jsonOk } from "@/lib/http";
 import { STATUS_LINE } from "@/legal/documents";
+import { FOUNDING_LIMIT, FOUNDING_RIGHT_VERSION } from "@/founding/right";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, ctx: { params: Promise<{ ordinal: string }> }) {
   const { ordinal } = await ctx.params;
   const parsed = Number.parseInt(ordinal, 10);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 9_999_999) {
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > FOUNDING_LIMIT) {
     return jsonError("BAD_ORDINAL", "No such entry.", 404);
   }
   const entry = await getPublicEntry(parsed).catch(() => null);
@@ -29,6 +30,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ordinal: strin
           ? String(entry.firstContinuationOrdinal).padStart(6, "0")
           : null,
       publicStatus: entry.publicStatus,
+      foundingRightVersion: FOUNDING_RIGHT_VERSION,
     },
     legalStatusLine: STATUS_LINE,
   });

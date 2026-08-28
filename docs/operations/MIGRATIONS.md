@@ -24,7 +24,40 @@ Drizzle is used for typed application queries; it does not own the schema.
 pnpm db:migrate
 ```
 
-Reads `.env.local` automatically. Prints each file applied.
+Reads `.env.local` automatically. Prints each file applied, after naming the
+host it is about to write to.
+
+Against production, the target must be named in the command:
+
+```bash
+pnpm db:migrate --production
+```
+
+That loads `.env.production.local` and lets it win over anything exported in
+the shell. `db:doctor --production` and `db:restore:verify --production` take
+the same flag. Never migrate production by exporting a connection string — the
+whole point of the flag is that the target is visible in the scrollback next
+to the result.
+
+## Rehearse against real data, not an empty database
+
+`db:migrate:check` proves migrations apply to an *empty* database. That does
+not prove they apply to a database that already holds entries — the case that
+actually matters. Before migrating production:
+
+```bash
+pg_dump -Fc -f prod.dump "$PROD_DIRECT_URL"          # a restore point first
+psql "$PROD_ADMIN_URL" -c "CREATE DATABASE ours_rehearsal"
+pg_restore -d "$SCRATCH_URL" --no-owner --no-acl prod.dump
+DIRECT_DATABASE_URL=$SCRATCH_URL DATABASE_URL=$SCRATCH_URL pnpm db:migrate
+DIRECT_DATABASE_URL=$SCRATCH_URL DATABASE_URL=$SCRATCH_URL pnpm conformance
+psql "$PROD_ADMIN_URL" -c "DROP DATABASE ours_rehearsal WITH (FORCE)"
+```
+
+Conformance on the rehearsal copy is the check that counts: it recomputes the
+digest chain over the migrated data. Keep the dump until production is verified.
+It contains real people's data — never put it in the repository, which is
+public.
 
 ## Prove they apply to an empty database
 

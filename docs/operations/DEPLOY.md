@@ -1,9 +1,17 @@
 # Runbook · Deploy
 
-**Status: NOTHING IS DEPLOYED.** No Git remote, no Vercel project, no database
-outside this machine, no domain, no sending domain. This runbook describes what
-deploying *would* require. Executing it needs a new human approval — the build
-handoff authorizes local work only.
+**Status: DEPLOYED.** Verified 28 August 2026. `ourstoday.com` is served from
+Vercel; the Git remote is public; a Neon PostgreSQL database holds canonical
+entries; email sends through Resend from a verified `updates.ourstoday.com`.
+Production canonical writes are **OPEN**.
+
+This section said the opposite until 28 August, long after each of those
+became true. A runbook that misdescribes the system it operates is worse than
+no runbook, because it is trusted. Anyone editing this file: the status line is
+part of the runbook, not decoration around it.
+
+Everything below still holds — each deployment and each opening of the ledger
+is a separate human decision with a receipt.
 
 ## Environments
 

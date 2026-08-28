@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { DocumentVersions } from "@/legal/documents";
+import type { MissionRow } from "@/ledger/missions";
+import { MissionPicker } from "./MissionPicker";
 
 interface ReceiptPayload {
   status?: string;
@@ -13,6 +15,7 @@ interface ReceiptPayload {
   isFirstContinuation?: boolean;
   witnessOrdinal?: string | null;
   memberRoot?: string;
+  foundingRightVersion?: string;
   relayUrl?: string | null;
   receipt?: {
     headline: string;
@@ -31,9 +34,11 @@ function makeKey(): string {
 export function SealForm({
   versions,
   alreadySealed,
+  missions,
 }: {
   versions: DocumentVersions;
   alreadySealed: boolean;
+  missions: MissionRow[];
 }) {
   const [name, setName] = useState("");
   const [witness, setWitness] = useState("");
@@ -114,17 +119,20 @@ export function SealForm({
 
   if (alreadySealed && !result) {
     return (
-      <div className="receipt-block">
-        <div className="receipt-status">ALREADY SEALED</div>
-        <h3>This account already holds an entry.</h3>
-        <p className="neutral-note">
-          Open{" "}
-          <a href="/me" style={{ color: "var(--paper)" }}>
-            /me
-          </a>{" "}
-          to see it, export your records or request changes.
-        </p>
-      </div>
+      <>
+        <div className="receipt-block">
+          <div className="receipt-status">ALREADY SEALED</div>
+          <h3>This account already holds an entry.</h3>
+          <p className="neutral-note">
+            Open{" "}
+            <a href="/me" style={{ color: "var(--paper)" }}>
+              /me
+            </a>{" "}
+            to see it, export your records or request changes.
+          </p>
+        </div>
+        <MissionPicker missions={missions} />
+      </>
     );
   }
 
@@ -133,7 +141,7 @@ export function SealForm({
     return (
       <article className="receipt-block" aria-live="polite">
         <div className="receipt-status">SEALED · COMMITTED</div>
-        <h3>{result.receipt?.headline ?? "You are in the Founding Ledger."}</h3>
+        <h3>{result.receipt?.headline ?? "You are in the Founding Million."}</h3>
         <dl>
           <div>
             <dt>PUBLIC NUMBER</dt>
@@ -161,8 +169,15 @@ export function SealForm({
             </div>
           ) : null}
           <div>
-            <dt>LEGAL MEMBERSHIP</dt>
-            <dd>NOT YET ISSUED — THIS IS NOT LEGAL MEMBERSHIP.</dd>
+            <dt>FOUNDING RIGHT</dt>
+            <dd>
+              {result.foundingRightVersion ?? "ours-founding-right/0.1"} — PERMANENT NUMBER, ONE
+              EQUAL FOUNDING BALLOT, NON-TRANSFERABLE.
+            </dd>
+          </div>
+          <div>
+            <dt>LEGAL STATUS</dt>
+            <dd>PROJECT RIGHT ONLY — NOT LEGAL MEMBERSHIP, A SHARE, SECURITY OR TOKEN.</dd>
           </div>
         </dl>
         {result.relayUrl ? (
@@ -235,6 +250,7 @@ export function SealForm({
             GO TO YOUR ACCOUNT
           </a>
         </div>
+        <MissionPicker missions={missions} />
       </article>
     );
   }
@@ -301,8 +317,8 @@ export function SealForm({
             />
             <span>
               I understand this creates one Founding Ledger place—not legal membership, not
-              ownership, not a share or token—and that my public number is assigned only when this
-              seals.
+              ownership, not a share or token—and attaches Founding Right 0.1: a permanent number
+              and one equal founding ballot, non-transferable, only when this seals.
             </span>
           </label>
 
