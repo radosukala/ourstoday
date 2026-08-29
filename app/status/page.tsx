@@ -200,6 +200,59 @@ export default async function StatusPage() {
           )}
         </section>
 
+        {/* A launch gate is something OURS has not finished. This is
+            different: a decision it has deliberately not taken, and will not
+            take alone. It belongs on the page about what is not yet true. */}
+        <section className="page-shell" aria-labelledby="undecided-title">
+          <div className="section-heading compact-heading">
+            <div>
+              <p className="eyebrow signal-text">UNDECIDED · ON PURPOSE</p>
+              <h2 id="undecided-title">The economics are not ours to set.</h2>
+            </div>
+            <p className="protocol-note">
+              A founder can set the economics of a network this size only by deciding for everyone
+              who has not arrived yet. With five people in the ledger, any rule written now would be
+              one person&apos;s guess wearing an institution&apos;s clothes.
+            </p>
+          </div>
+
+          <dl className="status-grid" style={{ marginTop: 34 }}>
+            <div className="status-cell">
+              <dt>ECONOMIC INSTRUMENT</dt>
+              <dd>NONE ADOPTED</dd>
+            </div>
+            <div className="status-cell">
+              <dt>DECIDED BY</dt>
+              <dd>MEMBERS</dd>
+            </div>
+            <div className="status-cell">
+              <dt>RATIFIES AT</dt>
+              <dd>100,000 PLACES</dd>
+            </div>
+            <div className="status-cell">
+              <dt>SEALED SO FAR</dt>
+              <dd>{c.entries === null ? "—" : c.entries.toLocaleString("en-US")}</dd>
+            </div>
+          </dl>
+
+          <p className="status-note">
+            Before that vote, OURS must publish economic simulations a member can run themselves —
+            editable assumptions, readable source — with the securities, cooperative-law and tax
+            review, and a published answer to what happens if there is never any surplus. Members
+            may ratify an instrument, ratify a different one, or ratify none. Until then a Founding
+            Right carries no claim on revenue, surplus, treasury or assets, and nothing on this site
+            offers one. Two earlier drafts were withdrawn; the record of what they proposed and why
+            they failed is published with them.
+          </p>
+          <p className="status-note">
+            <a href="/source/P-0002-FOUNDING-COHORT-ECONOMICS.md">P-0002 ↗</a>{" "}
+            <a href="/source/FOUNDING-RIGHT-AMENDMENT-0.1-ECONOMICS-RATIFICATION.md">
+              THE AMENDMENT ↗
+            </a>{" "}
+            <a href="/source/receipts/2026-08-28-economics-deferred.md">THE DECISION ↗</a>
+          </p>
+        </section>
+
         <section className="page-shell" aria-labelledby="conformance-title">
           <div className="section-heading compact-heading">
             <div>

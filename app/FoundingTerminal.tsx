@@ -123,6 +123,13 @@ export function FoundingTerminal({
           <span>PERMANENT NUMBER · EQUAL FOUNDING BALLOT · NON-TRANSFERABLE</span>
         </div>
 
+        {/* The founder declined to set the economics. Saying so is not a
+            disclaimer — it is the reason earliness is worth anything here. */}
+        <p className="fm-undecided">
+          <span>NOT DECIDED BY US</span>
+          THE ECONOMICS ARE UNDECIDED. THE FIRST 100,000 RATIFY THEM.
+        </p>
+
         <form className="fm-form" onSubmit={enter} noValidate>
           <label htmlFor="founding-email">YOUR EMAIL</label>
           <div className="fm-entry-row">

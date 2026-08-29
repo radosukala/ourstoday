@@ -14,6 +14,9 @@ const ALLOWLIST = new Set([
   "CONSTITUTION-AMENDMENT-0.1-FOUNDING-MILLION.md",
   "FOUNDING-RELAY-PROTOCOL.md",
   "FOUNDING-RIGHT-0.1.md",
+  "FOUNDING-RIGHT-AMENDMENT-0.1-ECONOMICS-RATIFICATION.md",
+  // The economics are undecided on purpose; the working file says so publicly.
+  "P-0002-FOUNDING-COHORT-ECONOMICS.md",
   "PROPOSAL-AND-DELIBERATION-PROTOCOL.md",
   "AGENT-BUILD-CONTRACT.md",
   "DAY-1.md",
@@ -45,6 +48,7 @@ const ALLOWLIST = new Set([
   "receipts/2026-08-26-instrument-disclosure-adoption.md",
   "receipts/2026-08-28-founding-million.md",
   "receipts/2026-08-28-first-target-and-one-surface.md",
+  "receipts/2026-08-28-economics-deferred.md",
   // Session records: what an AI instrument did, under whose authority.
   "sessions/2026-08-26-founding-build.md",
 ]);

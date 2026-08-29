@@ -39,7 +39,13 @@ Each active Founding Million place carries:
 4. **Notice and record right.** Timely notice, the complete proposal materials,
    governing versions, decision receipts, material dissent and the result for
    each of those founding decisions.
-5. **Data and exit right.** Access, export, correction and withdrawal through
+5. **Economics-ratification right.** No instrument creating economic
+   participation — surplus distribution, patronage units, fee exemption or any
+   successor to them — may be adopted by OURS until it has been ratified by
+   members under the published decision process. The founder-steward may not
+   adopt one by decision receipt. See
+   [the amendment](./FOUNDING-RIGHT-AMENDMENT-0.1-ECONOMICS-RATIFICATION.md).
+6. **Data and exit right.** Access, export, correction and withdrawal through
    the published process. Withdrawal ends active ballot eligibility but never
    transfers the ordinal.
 
@@ -55,11 +61,20 @@ economic superiority:
 - **1—10,000:** guaranteed notice and participation in the public drafting
   window for Constitution 1.0;
 - **1—100,000:** guaranteed notice and participation in the nomination window
-  for the first mission;
+  for the first mission, and the ratification of the first economic instrument;
 - **1—1,000,000:** one equal ballot in the founding ratification and first
   mission authorization.
 
 Nobody receives an extra final ballot because they entered in an earlier band.
+
+**The economics ratification.** The first economic instrument is put to
+ratification when no fewer than 100,000 places have been sealed, and not
+before. The threshold is a floor: it may be raised by a founder-steward receipt
+published before a vote opens, never lowered, and never changed while a vote is
+open. Before that vote OURS must publish economic simulations a member can run
+themselves, with editable assumptions and readable source, together with the
+securities, cooperative-law and tax review the instrument requires. A member
+who sealed a place before the vote opens votes in it, whatever their ordinal.
 
 ## 4. Equality and anti-capture
 
@@ -85,10 +100,14 @@ Founding Right 0.1 is not:
 - permission for the founder or stewards to count clicks, referrals or social
   attention as votes.
 
+It is also not a claim that economic participation will ever exist. Members may
+ratify an instrument, ratify a different one, or ratify none; "the members
+decide" includes deciding not to.
+
 Any future economic participation requires a separately adopted, licensed-
-reviewed instrument. If legal review requires this project instrument to
-change, the conflict and proposed remedy must be published before a founding
-ballot; the project may not silently subtract a right.
+reviewed instrument, ratified by members. If legal review requires this project
+instrument to change, the conflict and proposed remedy must be published before
+a founding ballot; the project may not silently subtract a right.
 
 ## 6. What happens at 1,000,000
 

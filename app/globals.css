@@ -3084,3 +3084,29 @@ main:has(> section + section) > .page-shell {
 .post-entry-missions.complete .small-button {
   margin-top: 18px;
 }
+
+/* The undecided economics, stated on the front page.
+   A project that has not decided how money works usually hides it. Here it is
+   the differentiator: nothing to hide because nothing has been taken. */
+.fm-undecided {
+  display: grid;
+  gap: 4px;
+  margin: clamp(12px, 1.8vh, 18px) 0 0;
+  padding-top: clamp(11px, 1.5vh, 15px);
+  border-top: 1px dashed var(--fm-line);
+  color: var(--fm-paper);
+  font: 700 10px/1.45 var(--mono);
+  letter-spacing: 0.045em;
+}
+
+.fm-undecided span {
+  color: var(--fm-red);
+  font-size: 8.5px;
+  letter-spacing: 0.13em;
+}
+
+@media (max-width: 620px) {
+  .fm-undecided {
+    font-size: 9.5px;
+  }
+}
