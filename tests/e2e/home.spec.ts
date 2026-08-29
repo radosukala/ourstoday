@@ -51,7 +51,37 @@ test.describe("the public instrument", () => {
     }
   });
 
-  for (const path of ["/", "/enter", "/status", "/anchors"]) {
+  test("the simulator reproduces a shared result and cites every figure", async ({ page }) => {
+    // The share loop is the whole point: a link that renders the DEFAULTS
+    // instead of the sender's numbers is an advert, not a shared finding.
+    // This broke silently once already under `force-static`, which honours
+    // query strings in development and drops them in a production build.
+    await page.goto("/worth?you=rides:30000,app-store:250000");
+    // Uppercase is a CSS transform; the DOM keeps sentence case.
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("worth to them");
+    await expect(page.locator(".worth-figure")).toContainText("$84K");
+    // "The ride" appears as both a chip and a result line; the result is the
+    // one that proves the shared link was honoured.
+    await expect(page.locator(".worth-lines").getByText("The ride", { exact: true })).toBeVisible();
+
+    // Every figure must carry a reachable source, or none of it is worth
+    // reading. No source link, no claim.
+    const sources = page.locator(".worth-source a");
+    expect(await sources.count()).toBeGreaterThan(0);
+    for (const href of await sources.evaluateAll((els) => els.map((e) => e.getAttribute("href")))) {
+      expect(href, "every figure needs a source URL").toMatch(/^https:\/\//);
+    }
+
+    // Nothing here may read as an offer of money.
+    await expect(page.getByText("NOT DECIDED BY US")).toBeVisible();
+
+    // Junk in the shared link falls back to the default rather than
+    // rendering somebody's absurd number as a headline.
+    await page.goto("/worth?you=rides:999999999999");
+    await expect(page.locator(".worth-figure")).not.toContainText("M");
+  });
+
+  for (const path of ["/", "/enter", "/status", "/anchors", "/worth"]) {
     test("axe finds no serious or critical violation on " + path, async ({ page }) => {
       await page.goto(path);
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();

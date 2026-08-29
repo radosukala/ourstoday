@@ -3110,3 +3110,442 @@ main:has(> section + section) > .page-shell {
     font-size: 9.5px;
   }
 }
+
+/* ===========================================================================
+   THE SIMULATOR — /worth
+   A claim asks to be believed; this hands over the arithmetic. Every figure
+   carries its source inline, because a number nobody can check is worth less
+   than no number at all.
+   =========================================================================== */
+
+/* One measure for the page. Without a cap the prose sits in a 60ch column
+   against 1400px of empty ink and reads as an accident rather than a choice. */
+.worth,
+.worth-hero {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: clamp(18px, 4vw, 48px);
+}
+
+.worth {
+  --worth-gap: clamp(38px, 5vw, 74px);
+  display: grid;
+  gap: var(--worth-gap);
+  padding-bottom: clamp(50px, 7vw, 96px);
+}
+
+.worth-hero {
+  padding-top: clamp(36px, 5.5vw, 84px);
+  padding-bottom: clamp(26px, 3.5vw, 46px);
+}
+
+.worth-hero h1 {
+  max-width: 15ch;
+  margin: 14px 0 0;
+  font-size: clamp(38px, 7vw, 96px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.worth-lede {
+  max-width: 70ch;
+  margin: clamp(18px, 2.4vw, 28px) 0 0;
+  color: var(--fm-dim);
+  font: 14px/1.65 var(--mono);
+}
+
+.worth-eyebrow {
+  margin: 0;
+  color: var(--fm-green);
+  font: 700 9.5px/1.3 var(--mono);
+  letter-spacing: 0.16em;
+}
+
+.worth-eyebrow.signal {
+  color: var(--fm-red);
+}
+
+.worth h2 {
+  margin: 0;
+  font-size: clamp(21px, 2.6vw, 34px);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+/* --- picking your products ------------------------------------------------ */
+
+.worth-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+  gap: 9px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.worth-chips button {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 2px 10px;
+  width: 100%;
+  height: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--fm-line);
+  background: transparent;
+  color: var(--fm-paper);
+  text-align: left;
+  cursor: pointer;
+}
+
+.worth-chips button:hover {
+  border-color: var(--fm-green);
+}
+
+.worth-chips button > span {
+  grid-row: span 2;
+  color: var(--fm-dim);
+  font: 700 12px/1.2 var(--mono);
+}
+
+.worth-chips button > b {
+  font: 700 12px/1.3 var(--mono);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.worth-chips button > em {
+  color: var(--fm-dim);
+  font: 10.5px/1.35 var(--mono);
+  font-style: normal;
+}
+
+.worth-chips button[aria-pressed="true"] {
+  border-color: var(--fm-green);
+  background: rgba(207, 255, 74, 0.07);
+}
+
+.worth-chips button[aria-pressed="true"] > span,
+.worth-chips button[aria-pressed="true"] > b {
+  color: var(--fm-green);
+}
+
+.worth-empty {
+  margin: 0;
+  color: var(--fm-dim);
+  font: 13px/1.6 var(--mono);
+}
+
+/* --- the total ------------------------------------------------------------ */
+
+.worth-total {
+  padding: clamp(24px, 3.4vw, 42px);
+  border: 1px solid var(--fm-line);
+  background: rgba(242, 239, 230, 0.03);
+}
+
+.worth-figure {
+  margin: 8px 0 0;
+  color: var(--fm-red);
+  font-size: clamp(56px, 12vw, 150px);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.06em;
+  line-height: 0.88;
+}
+
+.worth-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1px;
+  margin: clamp(22px, 3vw, 34px) 0 0;
+  background: var(--fm-line);
+  border: 1px solid var(--fm-line);
+}
+
+.worth-split > div {
+  padding: 15px 16px;
+  background: var(--ink);
+}
+
+.worth-split dt {
+  color: var(--fm-dim);
+  font: 700 8.5px/1.3 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.worth-split dd {
+  margin: 6px 0 0;
+  font: 700 clamp(20px, 2.6vw, 30px)/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.worth-note {
+  max-width: 74ch;
+  margin: 16px 0 0;
+  color: var(--fm-dim);
+  font: 10.5px/1.6 var(--mono);
+}
+
+/* --- the per-product breakdown -------------------------------------------- */
+
+.worth-lines ul,
+.worth-rights ul {
+  margin: 22px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--fm-line);
+  list-style: none;
+}
+
+.worth-lines li,
+.worth-rights li {
+  padding: clamp(18px, 2.3vw, 26px) 0;
+  border-bottom: 1px solid var(--fm-line);
+}
+
+.worth-line-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.worth-line-head b {
+  font: 700 14px/1.3 var(--mono);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.worth-line-head em {
+  display: block;
+  margin-top: 3px;
+  color: var(--fm-dim);
+  font: 11px/1.35 var(--mono);
+  font-style: normal;
+}
+
+.worth-line-figure {
+  color: var(--fm-red);
+  font: 700 clamp(22px, 2.8vw, 32px)/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.worth-line-figure i {
+  display: block;
+  margin-top: 5px;
+  color: var(--fm-dim);
+  font: 400 9.5px/1.3 var(--mono);
+  font-style: normal;
+}
+
+.worth-amount {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 16px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.worth-amount > span {
+  grid-column: 1 / -1;
+  color: var(--fm-dim);
+  font: 700 9px/1.3 var(--mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.worth-amount > b {
+  font: 700 14px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.worth input[type="range"] {
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--fm-green);
+  cursor: pointer;
+}
+
+.worth-rate {
+  max-width: 78ch;
+  margin: 14px 0 0;
+  color: var(--fm-paper);
+  font: 12px/1.6 var(--mono);
+}
+
+.worth-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 9px 0 0;
+  font: 700 9.5px/1.4 var(--mono);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.worth-source a {
+  color: var(--fm-green);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(207, 255, 74, 0.4);
+}
+
+.worth-source a:hover {
+  border-bottom-color: var(--fm-green);
+}
+
+.worth-source span {
+  color: var(--fm-dim);
+}
+
+/* --- the rights ledger ---------------------------------------------------- */
+
+.worth-rights h2 {
+  margin-top: 10px;
+}
+
+.worth-rights-intro {
+  max-width: 68ch;
+  margin: 16px 0 0;
+  color: var(--fm-dim);
+  font: 13px/1.65 var(--mono);
+}
+
+.worth-right-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.worth-right-head b {
+  max-width: 46ch;
+  font: 700 15px/1.35 var(--mono);
+}
+
+.worth-right-head span {
+  padding: 4px 9px;
+  border: 1px solid var(--fm-red);
+  color: var(--fm-red);
+  font: 700 9.5px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+}
+
+.worth-right-head span[data-status="PARTIAL"] {
+  border-color: rgba(242, 239, 230, 0.45);
+  color: var(--fm-dim);
+}
+
+.worth-rights li > p {
+  max-width: 92ch;
+  margin: 12px 0 0;
+  color: var(--fm-dim);
+  font: 12px/1.65 var(--mono);
+}
+
+.worth-right-ours {
+  color: var(--fm-green) !important;
+}
+
+.worth-right-ours span {
+  color: var(--fm-green);
+}
+
+/* --- the close ------------------------------------------------------------ */
+
+.worth-close {
+  padding: clamp(26px, 3.6vw, 44px);
+  border: 1px solid var(--fm-green);
+}
+
+.worth-close > p {
+  max-width: 76ch;
+  margin: 16px 0 0;
+  font: 13px/1.7 var(--mono);
+}
+
+.worth-undecided {
+  display: grid;
+  gap: 6px;
+  margin-top: clamp(20px, 2.6vw, 28px) !important;
+  padding-top: 18px;
+  border-top: 1px dashed var(--fm-line);
+  color: var(--fm-dim) !important;
+}
+
+.worth-undecided span {
+  color: var(--fm-red);
+  font: 700 9px/1.3 var(--mono);
+  letter-spacing: 0.13em;
+}
+
+.worth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: clamp(22px, 3vw, 30px);
+}
+
+.worth-go,
+.worth-share {
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+  padding: 15px 20px;
+  border: 1px solid var(--fm-green);
+  font: 700 11px/1.2 var(--mono);
+  letter-spacing: 0.07em;
+  cursor: pointer;
+}
+
+.worth-go {
+  background: var(--fm-green);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.worth-go:hover {
+  border-color: var(--fm-red);
+  background: var(--fm-red);
+  color: var(--fm-paper);
+}
+
+.worth-share {
+  background: transparent;
+  color: var(--fm-green);
+}
+
+.worth-share:hover {
+  background: rgba(207, 255, 74, 0.1);
+}
+
+@media (max-width: 620px) {
+  .worth-figure {
+    font-size: clamp(48px, 17vw, 78px);
+  }
+  .worth-line-head {
+    flex-direction: column;
+  }
+  .worth-line-figure {
+    text-align: left;
+  }
+}
+
+.fm-first em a {
+  color: var(--fm-green);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(207, 255, 74, 0.45);
+  white-space: nowrap;
+}
+
+.fm-first em a:hover {
+  border-bottom-color: var(--fm-green);
+}

@@ -23,6 +23,7 @@ export function FoundingTopline({ status }: { status?: string }) {
         {FOUNDING_LIMIT.toLocaleString("en-US")}
       </p>
       <nav aria-label="Formation record">
+        <a href="/worth">THE SIMULATOR</a>
         <a href="/source/FOUNDING-RIGHT-0.1.md">THE RIGHT</a>
         <a href="/status">LIVE STATE</a>
       </nav>
@@ -40,6 +41,7 @@ export function FoundingFooter() {
       <nav aria-label="Full record">
         <a href="/source/CONSTITUTION-0.1.md">CONSTITUTION</a>
         <a href="/source/CONSTITUTION-AMENDMENT-0.1-FOUNDING-MILLION.md">AMENDMENT</a>
+        <a href="/worth">WHAT THEY TAKE</a>
         <a href="/today">THE RECORD</a>
         <a href="/me">YOUR ACCOUNT</a>
       </nav>

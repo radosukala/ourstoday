@@ -67,7 +67,12 @@ export default async function HomePage() {
             <p className="fm-first" id="first">
               <span>LEAVING FIRST</span>
               <b>{target.title.toUpperCase()}</b>
-              {target.incumbents ? <em>{target.incumbents}</em> : null}
+              <em>
+                {target.incumbents ? target.incumbents + " · " : null}
+                {/* Curiosity is highest right here, at the named target. The
+                    simulator is the argument; this page is only the claim. */}
+                <a href="/worth">SEE WHAT IT TAKES FROM YOU →</a>
+              </em>
             </p>
           ) : null}
         </div>
