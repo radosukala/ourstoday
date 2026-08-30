@@ -202,6 +202,16 @@ export function WorthSimulator({ initial }: { initial: Selection[] }) {
               <p className="worth-right-ours">
                 <span aria-hidden="true">▸</span> {r.ours}
               </p>
+              {/* A row that names dates and vote counts has to be as
+                  checkable as the money above it. */}
+              {r.source ? (
+                <p className="worth-source">
+                  <a href={r.source.url} target="_blank" rel="noreferrer noopener">
+                    {r.source.publisher} ↗
+                  </a>
+                  <span>{r.source.asOf}</span>
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>

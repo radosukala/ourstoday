@@ -50,6 +50,9 @@ const ALLOWLIST = new Set([
   "receipts/2026-08-28-first-target-and-one-surface.md",
   "receipts/2026-08-28-economics-deferred.md",
   "receipts/2026-08-29-the-simulator.md",
+  // A false claim was published on /worth and withdrawn. The correction is
+  // part of the public record, not a quiet edit.
+  "receipts/2026-08-30-correction-the-vote-row.md",
   // Session records: what an AI instrument did, under whose authority.
   "sessions/2026-08-26-founding-build.md",
 ]);

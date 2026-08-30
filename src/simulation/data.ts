@@ -239,6 +239,12 @@ export interface Right {
   status: "NO" | "PARTIAL";
   detail: string;
   ours: string;
+  /**
+   * Present when the row makes a specific, checkable factual claim rather
+   * than describing the general state of the law. A claim with numbers in it
+   * has to be as traceable as the money on the rest of the page.
+   */
+  source?: { publisher: string; url: string; asOf: string };
 }
 
 export const RIGHTS: Right[] = [
@@ -271,8 +277,13 @@ export const RIGHTS: Right[] = [
     question: "Can you vote on a fee or a rule change?",
     status: "NO",
     detail:
-      "Not on any platform in this list, in any country, ever. The commission can move, the terms can change, the algorithm can be replaced, and the people it happens to are told afterwards, if at all.",
-    ours: "One member, one vote, on the fee and on the rule. This is the whole difference.",
+      "Facebook once let you, and then stopped. From 2009 its site governance vote was binding if 30% of users took part. In the final vote, in December 2012, 88% of the 668,500 people who voted opposed the changes — but that was 0.07% of users, the threshold failed, the changes passed, and one of them abolished the vote. No platform on this list has offered one since.",
+    ours: "One member, one vote, on the fee and on the rule — with a quorum that can actually be met, because a threshold nobody can reach is a polite way of saying no.",
+    source: {
+      publisher: "TechCrunch, final Facebook site governance vote result",
+      url: "https://techcrunch.com/2012/12/10/facebook-vote-ends/",
+      asOf: "December 2012",
+    },
   },
   {
     id: "share",
